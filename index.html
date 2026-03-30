@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Festa do Arthur 🏎️</title>
+  <title>Festa do Arthur 🕷️</title>
 
   <!-- PWA -->
   <meta name="theme-color" content="#CC0000" />
@@ -39,7 +39,7 @@
     .hw-splash{animation:splashOut .6s ease 2.4s both;}
     @keyframes splashOut{to{opacity:0;pointer-events:none;}}
     .hw-car{animation:carRide 2s ease-in-out both;}
-    @keyframes carRide{0%{transform:translateX(-120px) scaleX(-1);}70%{transform:translateX(0) scaleX(-1);}100%{transform:translateX(0) scaleX(-1);}}
+    @keyframes carRide{0%{transform:translateY(-80px) scale(0.5);opacity:0;}70%{transform:translateY(0) scale(1.1);opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}
     .hw-title-in{animation:titlePop .5s cubic-bezier(.34,1.56,.64,1) .7s both;}
     @keyframes titlePop{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:scale(1);}}
     .hw-progress{transition:width .5s cubic-bezier(.4,0,.2,1);}
@@ -54,7 +54,7 @@
     const { useState, useEffect, useCallback, useRef } = React;
 
     /* -- STORAGE (localStorage para PWA offline) -- */
-    const SK = "hotwheels-festa-2027";
+    const SK = "spiderman-festa-2027";
     function loadData() {
       try { const r = localStorage.getItem(SK); return r ? JSON.parse(r) : null; } catch { return null; }
     }
@@ -64,31 +64,30 @@
 
     const DD = {
       convidados: [
-        { telefone:"", 
-        { id:1, nome:"Vovó Maria", grupo:"Família", confirmado:null, adultos:1, criancas:0 },
-        { id:2, nome:"Vovô João", grupo:"Família", confirmado:null, adultos:1, criancas:0 },
-        { id:3, nome:"Tio Carlos + Tia Ana", grupo:"Família", confirmado:null, adultos:2, criancas:1 },
-        { id:4, nome:"Tia Fernanda", grupo:"Família", confirmado:null, adultos:1, criancas:0 },
-        { id:5, nome:"Primo Rafael", grupo:"Família", confirmado:null, adultos:0, criancas:1 },
-        { id:6, nome:"Lucas (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
-        { id:7, nome:"Pedro (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
-        { id:8, nome:"Enzo (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
-        { id:9, nome:"Davi (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
-        { id:10, nome:"Matheus (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
-        { id:11, nome:"Família Souza", grupo:"Amigos", confirmado:null, adultos:2, criancas:2 },
-        { id:12, nome:"Família Oliveira", grupo:"Amigos", confirmado:null, adultos:2, criancas:1 },
-        { id:13, nome:"Família Santos", grupo:"Amigos", confirmado:null, adultos:2, criancas:0 },
-        { id:14, nome:"Família Costa", grupo:"Amigos", confirmado:null, adultos:2, criancas:2 },
-        { id:15, nome:"Família Lima", grupo:"Amigos", confirmado:null, adultos:2, criancas:1 },
+        { id:1, nome:"Vovó Maria", grupo:"Família", confirmado:null, adultos:1, criancas:0, telefone:"(11) 99999-0001" },
+        { id:2, nome:"Vovô João", grupo:"Família", confirmado:null, adultos:1, criancas:0, telefone:"(11) 99999-0002" },
+        { id:3, nome:"Tio Carlos + Tia Ana", grupo:"Família", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0003" },
+        { id:4, nome:"Tia Fernanda", grupo:"Família", confirmado:null, adultos:1, criancas:0, telefone:"(11) 99999-0004" },
+        { id:5, nome:"Primo Rafael", grupo:"Família", confirmado:null, adultos:0, criancas:1, telefone:"(11) 99999-0005" },
+        { id:6, nome:"Lucas (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0006" },
+        { id:7, nome:"Pedro (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0007" },
+        { id:8, nome:"Enzo (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0008" },
+        { id:9, nome:"Davi (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0009" },
+        { id:10, nome:"Matheus (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0010" },
+        { id:11, nome:"Família Souza", grupo:"Amigos", confirmado:null, adultos:2, criancas:2, telefone:"(11) 99999-0011" },
+        { id:12, nome:"Família Oliveira", grupo:"Amigos", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0012" },
+        { id:13, nome:"Família Santos", grupo:"Amigos", confirmado:null, adultos:2, criancas:0, telefone:"(11) 99999-0013" },
+        { id:14, nome:"Família Costa", grupo:"Amigos", confirmado:null, adultos:2, criancas:2, telefone:"(11) 99999-0014" },
+        { id:15, nome:"Família Lima", grupo:"Amigos", confirmado:null, adultos:2, criancas:1, telefone:"(11) 99999-0015" },
       ],
       checklist: [
         { id:1, item:"Fechar buffet", categoria:"Buffet", done:false },
         { id:2, item:"Confirmar cardápio", categoria:"Buffet", done:false },
         { id:3, item:"Pagar entrada do buffet", categoria:"Buffet", done:false },
         { id:4, item:"Contratar DJ/som", categoria:"Entretenimento", done:false },
-        { id:5, item:"Encomendar bolo", categoria:"Alimentação", done:false },
-        { id:6, item:"Encomendar docinhos", categoria:"Alimentação", done:false },
-        { id:7, item:"Comprar balões Hot Wheels", categoria:"Decoração", done:false },
+        { id:5, item:"Encomendar bolo Homem Aranha", categoria:"Alimentação", done:false },
+        { id:6, item:"Encomendar docinhos temáticos", categoria:"Alimentação", done:false },
+        { id:7, item:"Comprar balões Homem Aranha", categoria:"Decoração", done:false },
         { id:8, item:"Encomendar painel decorativo", categoria:"Decoração", done:false },
         { id:9, item:"Comprar caixinhas de lembrança", categoria:"Lembranças", done:false },
         { id:10, item:"Imprimir convites", categoria:"Convites", done:false },
@@ -97,20 +96,6 @@
         { id:13, item:"Comprar roupa do aniversariante", categoria:"Aniversariante", done:false },
         { id:14, item:"Confirmar lista final com buffet", categoria:"Buffet", done:false },
         { id:15, item:"Preparar playlist de músicas", categoria:"Entretenimento", done:false },
-      ],
-      orcamento: [
-      ],
-      cotacoes:[
-        {
-          id:1,
-          produto:"Buffet",
-          opcoes:[
-            {nome:"Fornecedor A",valor:8000},
-            {nome:"Fornecedor B",valor:7200},
-            {nome:"Fornecedor C",valor:8500},
-            {nome:"Fornecedor D",valor:7800}
-          ]
-        }
       ],
       orcamento: [
         { id:1, item:"Buffet (100 pessoas)", valor:8000, pago:false },
@@ -124,12 +109,40 @@
         { id:9, item:"Roupa do aniversariante", valor:200, pago:false },
         { id:10, item:"Imprevistos (10%)", valor:1205, pago:false },
       ],
+      cotacoes: [
+        { servico:"Buffet", opcoes:[
+          { id:"b1", fornecedor:"Buffet Festa Total", contato:"(11) 98765-1111", valor:7500, obs:"Inclui decoração básica", escolhido:false },
+          { id:"b2", fornecedor:"Casa das Festas", contato:"(11) 98765-2222", valor:8000, obs:"Cardápio premium + bebidas", escolhido:false },
+          { id:"b3", fornecedor:"Buffet Infantil Mix", contato:"(11) 98765-3333", valor:6800, obs:"Sem bebida alcoólica", escolhido:false },
+        ]},
+        { servico:"Bolo", opcoes:[
+          { id:"c1", fornecedor:"Confeitaria Doce Sonho", contato:"(11) 97654-1111", valor:550, obs:"3 andares + decoração 3D", escolhido:false },
+          { id:"c2", fornecedor:"Bolo & Arte", contato:"(11) 97654-2222", valor:620, obs:"Pasta americana personalizada", escolhido:false },
+          { id:"c3", fornecedor:"Doceria da Vovó", contato:"(11) 97654-3333", valor:480, obs:"2 andares, entrega inclusa", escolhido:false },
+        ]},
+        { servico:"Decoração", opcoes:[
+          { id:"d1", fornecedor:"Decora Festas SP", contato:"(11) 96543-1111", valor:750, obs:"Painel + balões + mesa", escolhido:false },
+          { id:"d2", fornecedor:"Festa Mágica", contato:"(11) 96543-2222", valor:900, obs:"Decoração completa temática", escolhido:false },
+          { id:"d3", fornecedor:"Balão & Cia", contato:"(11) 96543-3333", valor:650, obs:"Painel + balões organicos", escolhido:false },
+        ]},
+        { servico:"DJ / Animação", opcoes:[
+          { id:"dj1", fornecedor:"DJ Kids Sound", contato:"(11) 95432-1111", valor:650, obs:"4h + som + microfone", escolhido:false },
+          { id:"dj2", fornecedor:"Animação Total", contato:"(11) 95432-2222", valor:800, obs:"DJ + animador + brincadeiras", escolhido:false },
+          { id:"dj3", fornecedor:"Festa Rock Kids", contato:"(11) 95432-3333", valor:700, obs:"DJ + iluminação LED", escolhido:false },
+        ]},
+        { servico:"Fotógrafo", opcoes:[
+          { id:"f1", fornecedor:"Foto & Arte Studio", contato:"(11) 94321-1111", valor:850, obs:"4h + álbum digital 100 fotos", escolhido:false },
+          { id:"f2", fornecedor:"Click Memórias", contato:"(11) 94321-2222", valor:950, obs:"5h + álbum impresso", escolhido:false },
+          { id:"f3", fornecedor:"Fotografia Moments", contato:"(11) 94321-3333", valor:780, obs:"3h + entrega em 7 dias", escolhido:false },
+        ]},
+      ],
     };
 
     const C = {
-      red:"#D00000",redD:"#8B0000",yellow:"#FFD700",black:"#080808",dark:"#101010",
-      surface:"#181818",card:"#1F1F1F",card2:"#272727",text:"#F2F2F2",muted:"#666",
-      success:"#22C55E",danger:"#EF4444",blue:"#3B82F6",purple:"#8B5CF6",border:"#2C2C2C",
+      red:"#CC0000",redD:"#800000",yellow:"#1A73E8",black:"#080808",dark:"#101010",
+      surface:"#0D1117",card:"#161B22",card2:"#21262D",text:"#F2F2F2",muted:"#666",
+      success:"#22C55E",danger:"#EF4444",blue:"#1A73E8",purple:"#8B5CF6",border:"#2C3444",
+      spiderBlue:"#1A73E8",spiderRed:"#CC0000",
     };
 
     function EditField({ value, onSave, type="text", style={} }) {
@@ -160,13 +173,13 @@
     function Splash({ onDone }) {
       useEffect(() => { const t = setTimeout(onDone, 2900); return ()=>clearTimeout(t); }, []);
       return (
-        <div className="hw-splash" style={{ position:"fixed", inset:0, zIndex:999, background:`linear-gradient(170deg,${C.redD},${C.red} 55%,#1a0000)`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ height:6, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 20px,transparent 20px,transparent 40px)`, width:"100%", position:"absolute", top:0 }} />
-          <div style={{ height:6, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 20px,transparent 20px,transparent 40px)`, width:"100%", position:"absolute", bottom:0 }} />
-          <div className="hw-car" style={{ fontSize:72, marginBottom:8 }}>🏎️</div>
-          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:52, color:"#fff", letterSpacing:3, lineHeight:1, textShadow:`3px 3px 0 ${C.redD}` }}>HOT WHEELS</div>
-          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:C.yellow, letterSpacing:6, animationDelay:".85s" }}>PARTY PLANNER</div>
-          <div className="hw-title-in" style={{ marginTop:16, fontSize:13, color:"rgba(255,255,255,.5)", fontWeight:700, animationDelay:"1.1s" }}>Festa do Arthur  09/01/2027</div>
+        <div className="hw-splash" style={{ position:"fixed", inset:0, zIndex:999, background:`linear-gradient(170deg,#800000,#CC0000 40%,#0a1628 80%)`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ height:6, background:`repeating-linear-gradient(90deg,${C.spiderBlue} 0,${C.spiderBlue} 20px,transparent 20px,transparent 40px)`, width:"100%", position:"absolute", top:0 }} />
+          <div style={{ height:6, background:`repeating-linear-gradient(90deg,${C.spiderBlue} 0,${C.spiderBlue} 20px,transparent 20px,transparent 40px)`, width:"100%", position:"absolute", bottom:0 }} />
+          <div className="hw-car" style={{ fontSize:80, marginBottom:8 }}>🕷️</div>
+          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:44, color:"#fff", letterSpacing:3, lineHeight:1, textShadow:`3px 3px 0 #800000`, textAlign:"center" }}>HOMEM ARANHA</div>
+          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:C.spiderBlue, letterSpacing:6, animationDelay:".85s" }}>EM AÇÃO</div>
+          <div className="hw-title-in" style={{ marginTop:16, fontSize:13, color:"rgba(255,255,255,.5)", fontWeight:700, animationDelay:"1.1s" }}>Festa do Arthur • 09/01/2027</div>
         </div>
       );
     }
@@ -176,7 +189,7 @@
       { id:"guests", icon:"👥", label:"Convidados" },
       { id:"check", icon:"✅", label:"Tarefas" },
       { id:"budget", icon:"💰", label:"Gastos" },
-      { id:"quotes", icon:"📊", label:"Cotações" },
+      { id:"cotacoes", icon:"📋", label:"Cotações" },
     ];
 
     function BottomNav({ tab, setTab }) {
@@ -235,6 +248,8 @@
       const editGuest = (id,f,v) => persist({...data, convidados:data.convidados.map(g=>g.id===id?{...g,[f]:v}:g)});
       const editCheck = (id,v) => persist({...data, checklist:data.checklist.map(c=>c.id===id?{...c,item:v}:c)});
       const editOrc = (id,f,v) => persist({...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,[f]:v}:o)});
+      const toggleEscolhido = (servico, opcaoId) => persist({...data, cotacoes:data.cotacoes.map(s=>s.servico===servico?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===opcaoId?!o.escolhido:false}))}:s)});
+      const editCotacao = (servico, opcaoId, field, val) => persist({...data, cotacoes:data.cotacoes.map(s=>s.servico===servico?{...s,opcoes:s.opcoes.map(o=>o.id===opcaoId?{...o,[field]:field==="valor"?parseFloat(val)||0:val}:o)}:s)});
       const addGuestFn = () => {
         if (!newGuest.nome.trim()) return;
         persist({...data, convidados:[...data.convidados,{...newGuest,id:Date.now(),confirmado:null,adultos:+newGuest.adultos,criancas:+newGuest.criancas}]});
@@ -257,12 +272,12 @@
 
           {/* HEADER */}
           <div style={{ background:C.surface, padding:"12px 16px 0", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:50 }}>
-            <div style={{ height:4, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 16px,transparent 16px,transparent 30px)`, marginBottom:10, borderRadius:2 }} />
+            <div style={{ height:4, background:`repeating-linear-gradient(90deg,${C.spiderRed} 0,${C.spiderRed} 16px,transparent 16px,transparent 30px)`, marginBottom:10, borderRadius:2 }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:10, letterSpacing:3, color:C.yellow, opacity:.8 }}>🏁 HOT WHEELS PARTY</span>
+              <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:10, letterSpacing:3, color:C.yellow, opacity:.8 }}>🕷️ HOMEM ARANHA EM AÇÃO</span>
               <span style={{ background:C.yellow, color:C.black, fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
             </div>
-            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}>FESTA DO ARTHUR</div>
+            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}>🕷️ HOMEM ARANHA EM AÇÃO</div>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:700, marginBottom:10 }}>Arthur Mosca · 6 Anos · 100 Pessoas 🎉</div>
           </div>
 
@@ -342,6 +357,7 @@
                             👤 <EditField value={g.adultos} type="number" onSave={v=>editGuest(g.id,"adultos",v)} style={{ color:C.muted, fontSize:10 }} />
                             {" "}👶 <EditField value={g.criancas} type="number" onSave={v=>editGuest(g.id,"criancas",v)} style={{ color:C.muted, fontSize:10 }} />
                           </span>
+                          {g.telefone && <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone} onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>}
                         </div>
                       </div>
                       <div style={{ display:"flex", gap:4, flexShrink:0 }}>
@@ -361,6 +377,7 @@
                       <select style={{ ...inpSt, marginBottom:8 }} value={newGuest.grupo} onChange={e=>setNewGuest({...newGuest,grupo:e.target.value})}>
                         <option>Família</option><option>Escola</option><option>Amigos</option>
                       </select>
+                      <input style={{ ...inpSt, marginBottom:8 }} placeholder="📱 Telefone" value={newGuest.telefone||""} onChange={e=>setNewGuest({...newGuest,telefone:e.target.value})} />
                       <div style={{ display:"flex", gap:8, marginBottom:12 }}>
                         {["adultos","criancas"].map(f=>(
                           <div key={f} style={{ flex:1 }}>
@@ -458,6 +475,60 @@
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {tab==="cotacoes" && (
+              <div>
+                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.spiderBlue, marginBottom:4 }}>📋 Cotações</div>
+                <div style={{ fontSize:12, color:C.muted, marginBottom:16 }}>Compare 3 opções por serviço e marque o escolhido</div>
+                {data.cotacoes.map(s=>{
+                  const escolhido = s.opcoes.find(o=>o.escolhido);
+                  const menorVal = Math.min(...s.opcoes.map(o=>o.valor));
+                  return (
+                    <div key={s.servico} style={{ marginBottom:20 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                        <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, letterSpacing:2, color:C.spiderBlue }}>{s.servico.toUpperCase()}</span>
+                        {escolhido && <span style={{ background:C.success+"22", color:C.success, borderRadius:20, padding:"2px 10px", fontSize:10, fontWeight:700 }}>✓ {escolhido.fornecedor}</span>}
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                        {s.opcoes.map((o,idx)=>{
+                          const isBest = o.valor===menorVal;
+                          const borderColor = o.escolhido ? C.success : isBest ? C.spiderBlue+"88" : C.border;
+                          return (
+                            <div key={o.id} className="hw-card" style={{ ...cardSt, marginBottom:0, border:`1.5px solid ${borderColor}`, background:o.escolhido?C.success+"11":C.card, position:"relative" }}>
+                              {isBest && !o.escolhido && <span style={{ position:"absolute", top:10, right:10, background:C.spiderBlue+"22", color:C.spiderBlue, fontSize:9, fontWeight:700, borderRadius:20, padding:"2px 8px" }}>💙 MENOR PREÇO</span>}
+                              {o.escolhido && <span style={{ position:"absolute", top:10, right:10, background:C.success+"22", color:C.success, fontSize:9, fontWeight:700, borderRadius:20, padding:"2px 8px" }}>✅ ESCOLHIDO</span>}
+                              <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                                <div style={{ width:32, height:32, borderRadius:10, background:o.escolhido?C.success+"33":"rgba(255,255,255,.05)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>
+                                  {idx===0?"🥇":idx===1?"🥈":"🥉"}
+                                </div>
+                                <div style={{ flex:1, minWidth:0 }}>
+                                  <EditField value={o.fornecedor} onSave={v=>editCotacao(s.servico,o.id,"fornecedor",v)} style={{ fontWeight:700, fontSize:13, color:C.text }} />
+                                  <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:3 }}>
+                                    <span style={{ color:C.muted, fontSize:11 }}>📱</span>
+                                    <EditField value={o.contato} onSave={v=>editCotacao(s.servico,o.id,"contato",v)} style={{ color:C.spiderBlue, fontSize:11, fontWeight:600 }} />
+                                  </div>
+                                  <div style={{ display:"flex", alignItems:"center", gap:3, marginTop:2 }}>
+                                    <span style={{ color:C.muted, fontSize:11 }}>R$</span>
+                                    <EditField value={o.valor} type="number" onSave={v=>editCotacao(s.servico,o.id,"valor",v)} style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:o.escolhido?C.success:isBest?C.spiderBlue:C.text, lineHeight:1 }} />
+                                  </div>
+                                  <div style={{ color:C.muted, fontSize:11, marginTop:3 }}>
+                                    <EditField value={o.obs} onSave={v=>editCotacao(s.servico,o.id,"obs",v)} style={{ color:C.muted, fontSize:11 }} />
+                                  </div>
+                                </div>
+                              </div>
+                              <button className="hw-btn" onClick={()=>toggleEscolhido(s.servico,o.id)}
+                                style={{ ...btnSm(o.escolhido?C.success:C.muted), width:"100%", marginTop:10, padding:"8px", textAlign:"center" }}>
+                                {o.escolhido?"✅ Selecionado — Clique para desmarcar":"Selecionar esta opção"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
