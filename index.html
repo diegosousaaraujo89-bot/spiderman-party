@@ -1,9 +1,10 @@
+<!-- CÓDIGO COMPLETO AJUSTADO -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title> Arthur 6 Anos - Homem Aranha em Ação </title>
+<title>Arthur ???</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
 
@@ -15,13 +16,7 @@
 body{margin:0;background:#020617;color:#fff;font-family:'Nunito'}
 .card{background:#111827;padding:14px;border-radius:12px;margin-bottom:10px}
 .btn{padding:8px 10px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
-.red{background:#E11D48;color:#fff}
-.blue{background:#1D4ED8;color:#fff}
-.green{background:#22C55E;color:#fff}
 .best{background:#22C55E33;border:1px solid #22C55E}
-.tab{padding:10px;cursor:pointer}
-.active{color:#22C55E}
-.header{font-family:'Bebas Neue';font-size:32px;color:#E11D48}
 </style>
 </head>
 
@@ -29,10 +24,15 @@ body{margin:0;background:#020617;color:#fff;font-family:'Nunito'}
 <div id="root"></div>
 
 <script type="text/babel">
-const {useState}=React;
+const {useState,useEffect}=React;
+
+const C={
+red:"#E11D48",redD:"#7F1D1D",yellow:"#FACC15",
+black:"#020617",card:"#111827",text:"#F1F5F9"
+};
 
 function getBest(opcoes){
-  return opcoes.reduce((min,c)=> c.valor<min.valor?c:min,opcoes[0]);
+return opcoes.reduce((min,c)=>c.valor<min.valor?c:min,opcoes[0]);
 }
 
 function App(){
@@ -40,7 +40,7 @@ function App(){
 const [tab,setTab]=useState("home");
 
 const [convidados,setConvidados]=useState([
-{id:1,nome:"Vovó Maria",telefone:"11999999999",confirmado:null},
+{id:1,nome:"Vovó Maria",telefone:"11999999999",confirmado:null}
 ]);
 
 const [cotacoes,setCotacoes]=useState([
@@ -50,21 +50,20 @@ produto:"Buffet",
 opcoes:[
 {nome:"Fornecedor A",valor:8000},
 {nome:"Fornecedor B",valor:7200},
-{nome:"Fornecedor C",valor:8500}
+{nome:"Fornecedor C",valor:8500},
+{nome:"Fornecedor D",valor:7800}
 ]
 }
 ]);
 
-// ---------- CONVIDADOS ----------
-const addConvidado=()=>{
+const addGuest=()=>{
 setConvidados([...convidados,{id:Date.now(),nome:"",telefone:"",confirmado:null}]);
 };
 
-const updateConvidado=(id,field,value)=>{
+const updateGuest=(id,field,value)=>{
 setConvidados(convidados.map(c=>c.id===id?{...c,[field]:value}:c));
 };
 
-// ---------- COTAÇÕES ----------
 const addCotacao=()=>{
 setCotacoes([...cotacoes,{
 id:Date.now(),
@@ -72,64 +71,61 @@ produto:"Novo Serviço",
 opcoes:[
 {nome:"Opção 1",valor:0},
 {nome:"Opção 2",valor:0},
-{nome:"Opção 3",valor:0}
+{nome:"Opção 3",valor:0},
+{nome:"Opção 4",valor:0}
 ]
 }]);
 };
 
-const updateCotacao=(id,index,field,value)=>{
+const updateCotacao=(id,i,field,value)=>{
 setCotacoes(cotacoes.map(c=>{
 if(c.id!==id) return c;
 const nova=[...c.opcoes];
-nova[index][field]=field==="valor"?Number(value):value;
+nova[i][field]=field==="valor"?Number(value):value;
 return {...c,opcoes:nova};
 }));
 };
 
-// ---------- DASHBOARD ----------
-const totalConvidados=convidados.length;
-const confirmados=convidados.filter(c=>c.confirmado===true).length;
-
 return(
 <div style={{padding:20,maxWidth:500,margin:"auto"}}>
 
-<div className="header">??? SPIDER-MAN EM AÇÃO</div>
+<h1 style={{fontFamily:"Bebas Neue",color:"#E11D48"}}>
+??? SPIDER-MAN EM AÇÃO
+</h1>
 
 <div style={{display:"flex",gap:10,marginBottom:10}}>
-<div className={tab==="home"?"active tab":"tab"} onClick={()=>setTab("home")}>??</div>
-<div className={tab==="convidados"?"active tab":"tab"} onClick={()=>setTab("convidados")}>??</div>
-<div className={tab==="cotacoes"?"active tab":"tab"} onClick={()=>setTab("cotacoes")}>??</div>
+<button onClick={()=>setTab("home")}>??</button>
+<button onClick={()=>setTab("convidados")}>??</button>
+<button onClick={()=>setTab("cotacoes")}>??</button>
 </div>
 
-{/* HOME */}
 {tab==="home" && (
 <div className="card">
-<div>Total convidados: {totalConvidados}</div>
-<div>Confirmados: {confirmados}</div>
+<div>Total convidados: {convidados.length}</div>
+<div>Confirmados: {convidados.filter(c=>c.confirmado).length}</div>
 </div>
 )}
 
-{/* CONVIDADOS */}
 {tab==="convidados" && (
 <div>
-<button className="btn blue" onClick={addConvidado}>+ Convidado</button>
+<button className="btn" onClick={addGuest}>+ Convidado</button>
 
 {convidados.map(c=>(
 <div key={c.id} className="card">
 
 <input placeholder="Nome"
 value={c.nome}
-onChange={e=>updateConvidado(c.id,"nome",e.target.value)}
+onChange={e=>updateGuest(c.id,"nome",e.target.value)}
 />
 
-<input placeholder="Telefone"
+<input placeholder="WhatsApp"
 value={c.telefone}
-onChange={e=>updateConvidado(c.id,"telefone",e.target.value)}
+onChange={e=>updateGuest(c.id,"telefone",e.target.value)}
 />
 
-<div style={{marginTop:8}}>
-<button className="btn green" onClick={()=>updateConvidado(c.id,"confirmado",true)}>?</button>
-<button className="btn red" onClick={()=>updateConvidado(c.id,"confirmado",false)}>?</button>
+<div>
+<button onClick={()=>updateGuest(c.id,"confirmado",true)}>?</button>
+<button onClick={()=>updateGuest(c.id,"confirmado",false)}>?</button>
 </div>
 
 </div>
@@ -137,10 +133,10 @@ onChange={e=>updateConvidado(c.id,"telefone",e.target.value)}
 </div>
 )}
 
-{/* COTAÇÕES */}
 {tab==="cotacoes" && (
 <div>
-<button className="btn blue" onClick={addCotacao}>+ Cotação</button>
+
+<button onClick={addCotacao}>+ Cotação</button>
 
 {cotacoes.map(c=>{
 const best=getBest(c.opcoes);
@@ -157,7 +153,7 @@ setCotacoes(lista);
 />
 
 {c.opcoes.map((o,i)=>(
-<div key={i} className={best===o?"best":""} style={{marginTop:6}}>
+<div key={i} className={best===o?"best":""}>
 
 <input value={o.nome}
 onChange={e=>updateCotacao(c.id,i,"nome",e.target.value)}
@@ -171,13 +167,14 @@ onChange={e=>updateCotacao(c.id,i,"valor",e.target.value)}
 </div>
 ))}
 
-<div style={{marginTop:10}}>
+<div>
 ?? Melhor opção: <b>{best.nome}</b> - R$ {best.valor}
 </div>
 
 </div>
 )
 })}
+
 </div>
 )}
 
