@@ -227,6 +227,8 @@
       const [newGuest, setNewGuest] = useState({ nome:"", grupo:"Família", adultos:2, criancas:1 });
       const [filterGroup, setFilterGroup] = useState("Todos");
       const [searchQ, setSearchQ] = useState("");
+      const [convidadoModal, setConvidadoModal] = useState(null);
+      const [toastMsg, setToastMsg] = useState(null);
 
       const persist = useCallback((nd) => { setData(nd); saveData(nd); }, []);
 
@@ -250,6 +252,56 @@
       const editOrc = (id,f,v) => persist({...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,[f]:v}:o)});
       const toggleEscolhido = (servico, opcaoId) => persist({...data, cotacoes:data.cotacoes.map(s=>s.servico===servico?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===opcaoId?!o.escolhido:false}))}:s)});
       const editCotacao = (servico, opcaoId, field, val) => persist({...data, cotacoes:data.cotacoes.map(s=>s.servico===servico?{...s,opcoes:s.opcoes.map(o=>o.id===opcaoId?{...o,[field]:field==="valor"?parseFloat(val)||0:val}:o)}:s)});
+      const showToast = (msg) => { setToastMsg(msg); setTimeout(()=>setToastMsg(null), 3000); };
+
+      const sendInviteWhatsApp = (g) => {
+        const texto = encodeURIComponent(
+          `🕷️ *Homem Aranha em Ação!* 🕷️\n\n` +
+          `Olá, *${g.nome}*! 🎉\n` +
+          `Você está convidado(a) para a festa de aniversário do *Arthur*!\n\n` +
+          `📅 *Data:* 09 de Janeiro de 2027\n` +
+          `🎂 *Tema:* Homem Aranha em Ação\n\n` +
+          `Para *CONFIRMAR* sua presença, responda com:\n` +
+          `✅ *SIM* — vou comparecer\n` +
+          `❌ *NÃO* — não poderei ir\n\n` +
+          `_Aguardamos sua confirmação! 🕸️_`
+        );
+        const phone = (g.telefone||"").replace(/\D/g,"");
+        const url = phone
+          ? \`https://wa.me/55\${phone}?text=\${texto}\`
+          : \`https://wa.me/?text=\${texto}\`;
+        window.open(url, "_blank");
+        persist({...data, convidados:data.convidados.map(c=>c.id===g.id?{...c,conviteEnviado:true}:c)});
+        showToast(\`Convite aberto para \${g.nome}! 📨\`);
+        setConvidadoModal(null);
+      };
+
+      const sendInviteSMS = (g) => {
+        const texto = encodeURIComponent(
+          \`🕷️ Festa do Arthur - Homem Aranha em Ação! \n\` +
+          \`Olá \${g.nome}! Você está convidado(a) para 09/01/2027. \n\` +
+          \`Confirme sua presença respondendo SIM ou NÃO.\`
+        );
+        const phone = (g.telefone||"").replace(/\D/g,"");
+        const url = phone ? \`sms:\${phone}?body=\${texto}\` : \`sms:?body=\${texto}\`;
+        window.open(url, "_blank");
+        persist({...data, convidados:data.convidados.map(c=>c.id===g.id?{...c,conviteEnviado:true}:c)});
+        showToast(\`SMS aberto para \${g.nome}! 📩\`);
+        setConvidadoModal(null);
+      };
+
+      const confirmFromInvite = (g) => {
+        persist({...data, convidados:data.convidados.map(c=>c.id===g.id?{...c,confirmado:true,conviteEnviado:true}:c)});
+        showToast(\`✅ \${g.nome} confirmado(a)!\`);
+        setConvidadoModal(null);
+      };
+
+      const recusarFromInvite = (g) => {
+        persist({...data, convidados:data.convidados.map(c=>c.id===g.id?{...c,confirmado:false}:c)});
+        showToast(\`❌ \${g.nome} marcado(a) como recusou.\`);
+        setConvidadoModal(null);
+      };
+
       const addGuestFn = () => {
         if (!newGuest.nome.trim()) return;
         persist({...data, convidados:[...data.convidados,{...newGuest,id:Date.now(),confirmado:null,adultos:+newGuest.adultos,criancas:+newGuest.criancas}]});
@@ -268,6 +320,60 @@
 
       return (
         <div style={{ background:C.black, minHeight:"100vh", maxWidth:480, margin:"0 auto", position:"relative" }}>
+
+          {/* TOAST */}
+          {toastMsg && (
+            <div style={{ position:"fixed", top:20, left:"50%", transform:"translateX(-50%)", zIndex:9999, background:"#1a1a2e", border:`1px solid ${C.spiderBlue}`, color:C.text, padding:"10px 20px", borderRadius:30, fontSize:13, fontWeight:700, boxShadow:"0 4px 24px rgba(0,0,0,.7)", whiteSpace:"nowrap", animation:"fadeUp .3s ease" }}>
+              {toastMsg}
+            </div>
+          )}
+
+          {/* MODAL CONVIDADO */}
+          {convidadoModal && (
+            <div style={{ position:"fixed", inset:0, zIndex:500, background:"rgba(0,0,0,.8)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={()=>setConvidadoModal(null)}>
+              <div className="hw-fade" style={{ background:C.surface, borderRadius:"20px 20px 0 0", padding:24, width:"100%", maxWidth:480, border:`1px solid ${C.border}`, paddingBottom:40 }} onClick={e=>e.stopPropagation()}>
+                <div style={{ width:40, height:4, background:C.border, borderRadius:4, margin:"0 auto 20px" }} />
+                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+                  <div style={{ width:48, height:48, borderRadius:14, background:gc(convidadoModal.grupo)+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24 }}>
+                    {convidadoModal.grupo==="Família"?"👨‍👩‍👧‍👦":convidadoModal.grupo==="Escola"?"🎒":"🤝"}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight:900, fontSize:16 }}>{convidadoModal.nome}</div>
+                    <div style={{ color:C.muted, fontSize:12 }}>{convidadoModal.telefone || "Sem telefone"}</div>
+                  </div>
+                  {convidadoModal.conviteEnviado && <span style={{ marginLeft:"auto", background:C.spiderBlue+"22", color:C.spiderBlue, fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>📨 Enviado</span>}
+                </div>
+
+                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.muted, marginBottom:12 }}>ENVIAR CONVITE</div>
+                <div style={{ display:"flex", gap:10, marginBottom:20 }}>
+                  <button className="hw-btn" onClick={()=>sendInviteWhatsApp(convidadoModal)}
+                    style={{ flex:1, background:"#25D36622", color:"#25D366", border:"1.5px solid #25D36644", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                    <span style={{ fontSize:22 }}>💬</span>WhatsApp
+                  </button>
+                  <button className="hw-btn" onClick={()=>sendInviteSMS(convidadoModal)}
+                    style={{ flex:1, background:C.spiderBlue+"22", color:C.spiderBlue, border:`1.5px solid ${C.spiderBlue}44`, borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                    <span style={{ fontSize:22 }}>📩</span>SMS
+                  </button>
+                </div>
+
+                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.muted, marginBottom:12 }}>REGISTRAR RESPOSTA</div>
+                <div style={{ display:"flex", gap:10, marginBottom:12 }}>
+                  <button className="hw-btn" onClick={()=>confirmFromInvite(convidadoModal)}
+                    style={{ flex:1, background:C.success+"22", color:C.success, border:`1.5px solid ${C.success}44`, borderRadius:12, padding:12, fontWeight:900, fontSize:13, cursor:"pointer" }}>
+                    ✅ Confirmou presença
+                  </button>
+                  <button className="hw-btn" onClick={()=>recusarFromInvite(convidadoModal)}
+                    style={{ flex:1, background:C.danger+"22", color:C.danger, border:`1.5px solid ${C.danger}44`, borderRadius:12, padding:12, fontWeight:900, fontSize:13, cursor:"pointer" }}>
+                    ❌ Não vai comparecer
+                  </button>
+                </div>
+                <button className="hw-btn" onClick={()=>setConvidadoModal(null)}
+                  style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:12, padding:10, color:C.muted, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
           {splash && <Splash onDone={()=>setSplash(false)} />}
 
           {/* HEADER */}
@@ -338,6 +444,19 @@
             {tab==="guests" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>👥 Convidados ({data.convidados.length})</div>
+                <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                  {[
+                    { label:"Enviados", val:data.convidados.filter(g=>g.conviteEnviado).length, color:C.spiderBlue, icon:"📨" },
+                    { label:"Aguardando", val:data.convidados.filter(g=>g.conviteEnviado&&g.confirmado===null).length, color:C.yellow, icon:"⏳" },
+                    { label:"Confirmados", val:data.convidados.filter(g=>g.confirmado===true).length, color:C.success, icon:"✅" },
+                  ].map((s,i)=>(
+                    <div key={i} style={{ flex:1, background:s.color+"15", border:`1px solid ${s.color}33`, borderRadius:12, padding:"8px 6px", textAlign:"center" }}>
+                      <div style={{ fontSize:14 }}>{s.icon}</div>
+                      <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:s.color, lineHeight:1 }}>{s.val}</div>
+                      <div style={{ fontSize:9, color:C.muted, fontWeight:700 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
                 <input style={{ ...inpSt, marginBottom:10 }} placeholder="🔍 Buscar..." value={searchQ} onChange={e=>setSearchQ(e.target.value)} />
                 <div style={{ display:"flex", gap:6, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
                   {groups.map(g=><button key={g} className="hw-btn" onClick={()=>setFilterGroup(g)} style={{ ...btnSm(filterGroup===g?C.yellow:C.muted), whiteSpace:"nowrap", flexShrink:0, padding:"6px 14px" }}>{g}</button>)}
@@ -345,25 +464,34 @@
                 <div style={cardSt}>
                   {filtered.length===0 && <div style={{ textAlign:"center", color:C.muted, padding:24 }}>Nenhum encontrado</div>}
                   {filtered.map((g,i)=>(
-                    <div key={g.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 0", borderBottom:i<filtered.length-1?`1px solid ${C.border}`:"none" }}>
-                      <div style={{ width:38, height:38, borderRadius:12, background:gc(g.grupo)+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>
-                        {g.grupo==="Família"?"👨‍👩‍👧‍👦":g.grupo==="Escola"?"🎒":"🤝"}
-                      </div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <EditField value={g.nome} onSave={v=>editGuest(g.id,"nome",v)} style={{ fontWeight:700, fontSize:14 }} />
-                        <div style={{ display:"flex", gap:5, marginTop:3, alignItems:"center", flexWrap:"wrap" }}>
-                          <span style={{ background:gc(g.grupo)+"22", color:gc(g.grupo), borderRadius:20, padding:"2px 9px", fontSize:10, fontWeight:700 }}>{g.grupo}</span>
-                          <span style={{ color:C.muted, fontSize:10 }}>
-                            👤 <EditField value={g.adultos} type="number" onSave={v=>editGuest(g.id,"adultos",v)} style={{ color:C.muted, fontSize:10 }} />
-                            {" "}👶 <EditField value={g.criancas} type="number" onSave={v=>editGuest(g.id,"criancas",v)} style={{ color:C.muted, fontSize:10 }} />
-                          </span>
-                          {g.telefone && <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone} onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>}
+                    <div key={g.id} style={{ padding:"12px 0", borderBottom:i<filtered.length-1?`1px solid ${C.border}`:"none" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ width:38, height:38, borderRadius:12, background:gc(g.grupo)+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0, position:"relative" }}>
+                          {g.grupo==="Família"?"👨‍👩‍👧‍👦":g.grupo==="Escola"?"🎒":"🤝"}
+                          {g.conviteEnviado && <div style={{ position:"absolute", top:-4, right:-4, width:12, height:12, borderRadius:"50%", background:C.spiderBlue, border:`2px solid ${C.card}`, fontSize:7, display:"flex", alignItems:"center", justifyContent:"center" }}>📨</div>}
                         </div>
-                      </div>
-                      <div style={{ display:"flex", gap:4, flexShrink:0 }}>
-                        <button className="hw-btn" onClick={()=>toggleConfirm(g.id,true)} style={{ ...btnSm(g.confirmado===true?C.success:C.muted), padding:"5px 8px" }}>✓</button>
-                        <button className="hw-btn" onClick={()=>toggleConfirm(g.id,false)} style={{ ...btnSm(g.confirmado===false?C.danger:C.muted), padding:"5px 8px" }}>✗</button>
-                        <button className="hw-btn" onClick={()=>removeGuest(g.id)} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:15 }}>🗑️</button>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                            <EditField value={g.nome} onSave={v=>editGuest(g.id,"nome",v)} style={{ fontWeight:700, fontSize:14 }} />
+                            {g.confirmado===true && <span style={{ fontSize:10, color:C.success, fontWeight:900 }}>✅</span>}
+                            {g.confirmado===false && <span style={{ fontSize:10, color:C.danger, fontWeight:900 }}>❌</span>}
+                            {g.confirmado===null && g.conviteEnviado && <span style={{ fontSize:10, color:C.yellow, fontWeight:900 }}>⏳</span>}
+                          </div>
+                          <div style={{ display:"flex", gap:5, marginTop:3, alignItems:"center", flexWrap:"wrap" }}>
+                            <span style={{ background:gc(g.grupo)+"22", color:gc(g.grupo), borderRadius:20, padding:"2px 9px", fontSize:10, fontWeight:700 }}>{g.grupo}</span>
+                            <span style={{ color:C.muted, fontSize:10 }}>
+                              👤 <EditField value={g.adultos} type="number" onSave={v=>editGuest(g.id,"adultos",v)} style={{ color:C.muted, fontSize:10 }} />
+                              {" "}👶 <EditField value={g.criancas} type="number" onSave={v=>editGuest(g.id,"criancas",v)} style={{ color:C.muted, fontSize:10 }} />
+                            </span>
+                            {g.telefone && <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone} onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>}
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+                          <button className="hw-btn" onClick={()=>setConvidadoModal(g)} style={{ background:C.spiderBlue+"22", color:C.spiderBlue, border:`1px solid ${C.spiderBlue}33`, borderRadius:9, padding:"5px 9px", fontSize:16, cursor:"pointer" }} title="Enviar convite">✉️</button>
+                          <button className="hw-btn" onClick={()=>toggleConfirm(g.id,true)} style={{ ...btnSm(g.confirmado===true?C.success:C.muted), padding:"5px 8px" }}>✓</button>
+                          <button className="hw-btn" onClick={()=>toggleConfirm(g.id,false)} style={{ ...btnSm(g.confirmado===false?C.danger:C.muted), padding:"5px 8px" }}>✗</button>
+                          <button className="hw-btn" onClick={()=>removeGuest(g.id)} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:15 }}>🗑️</button>
+                        </div>
                       </div>
                     </div>
                   ))}
