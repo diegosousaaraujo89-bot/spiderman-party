@@ -64,30 +64,31 @@
 
     const DD = {
       convidados: [
-        { id:1, nome:"Vovó Maria", grupo:"Família",telefone:"11999999999", confirmado:null, adultos:1, criancas:0 },
-        { id:2, nome:"Vovô João", grupo:"Família", telefone:"11999999999",confirmado:null, adultos:1, criancas:0 },
-        { id:3, nome:"Tio Carlos + Tia Ana", grupo:"Família",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:4, nome:"Tia Fernanda", grupo:"Família",telefone:"11999999999", confirmado:null, adultos:1, criancas:0 },
-        { id:5, nome:"Primo Rafael", grupo:"Família",telefone:"11999999999", confirmado:null, adultos:0, criancas:1 },
-        { id:6, nome:"Lucas (escola)", grupo:"Escola",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:7, nome:"Pedro (escola)", grupo:"Escola",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:8, nome:"Enzo (escola)", grupo:"Escola",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:9, nome:"Davi (escola)", grupo:"Escola",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:10, nome:"Matheus (escola)", grupo:"Escola",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:11, nome:"Família Souza", grupo:"Amigos",telefone:"11999999999", confirmado:null, adultos:2, criancas:2 },
-        { id:12, nome:"Família Oliveira", grupo:"Amigos",telefone:"11999999999", confirmado:null, adultos:2, criancas:1 },
-        { id:13, nome:"Família Santos", grupo:"Amigos",telefone:"11999999999", confirmado:null, adultos:2, criancas:0 },
-        { id:14, nome:"Família Costa", grupo:"Amigos",telefone:"11999999999", confirmado:null, adultos:2, criancas:2 },
-        { id:15, nome:"Família Lima", grupo:"Amigos",telefone:"11999999999",confirmado:null, adultos:2, criancas:1 },
+        { telefone:"", 
+        { id:1, nome:"Vovó Maria", grupo:"Família", confirmado:null, adultos:1, criancas:0 },
+        { id:2, nome:"Vovô João", grupo:"Família", confirmado:null, adultos:1, criancas:0 },
+        { id:3, nome:"Tio Carlos + Tia Ana", grupo:"Família", confirmado:null, adultos:2, criancas:1 },
+        { id:4, nome:"Tia Fernanda", grupo:"Família", confirmado:null, adultos:1, criancas:0 },
+        { id:5, nome:"Primo Rafael", grupo:"Família", confirmado:null, adultos:0, criancas:1 },
+        { id:6, nome:"Lucas (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
+        { id:7, nome:"Pedro (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
+        { id:8, nome:"Enzo (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
+        { id:9, nome:"Davi (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
+        { id:10, nome:"Matheus (escola)", grupo:"Escola", confirmado:null, adultos:2, criancas:1 },
+        { id:11, nome:"Família Souza", grupo:"Amigos", confirmado:null, adultos:2, criancas:2 },
+        { id:12, nome:"Família Oliveira", grupo:"Amigos", confirmado:null, adultos:2, criancas:1 },
+        { id:13, nome:"Família Santos", grupo:"Amigos", confirmado:null, adultos:2, criancas:0 },
+        { id:14, nome:"Família Costa", grupo:"Amigos", confirmado:null, adultos:2, criancas:2 },
+        { id:15, nome:"Família Lima", grupo:"Amigos", confirmado:null, adultos:2, criancas:1 },
       ],
       checklist: [
         { id:1, item:"Fechar buffet", categoria:"Buffet", done:false },
         { id:2, item:"Confirmar cardápio", categoria:"Buffet", done:false },
         { id:3, item:"Pagar entrada do buffet", categoria:"Buffet", done:false },
-        { id:4, item:"Contratar chácara", categoria:"Entretenimento", done:false },
+        { id:4, item:"Contratar DJ/som", categoria:"Entretenimento", done:false },
         { id:5, item:"Encomendar bolo", categoria:"Alimentação", done:false },
         { id:6, item:"Encomendar docinhos", categoria:"Alimentação", done:false },
-        { id:7, item:"Comprar balões Homem Aranha", categoria:"Decoração", done:false },
+        { id:7, item:"Comprar balões Hot Wheels", categoria:"Decoração", done:false },
         { id:8, item:"Encomendar painel decorativo", categoria:"Decoração", done:false },
         { id:9, item:"Comprar caixinhas de lembrança", categoria:"Lembranças", done:false },
         { id:10, item:"Imprimir convites", categoria:"Convites", done:false },
@@ -96,7 +97,21 @@
         { id:13, item:"Comprar roupa do aniversariante", categoria:"Aniversariante", done:false },
         { id:14, item:"Confirmar lista final com buffet", categoria:"Buffet", done:false },
         { id:15, item:"Preparar playlist de músicas", categoria:"Entretenimento", done:false },
-     ],
+      ],
+      orcamento: [
+      ],
+      cotacoes:[
+        {
+          id:1,
+          produto:"Buffet",
+          opcoes:[
+            {nome:"Fornecedor A",valor:8000},
+            {nome:"Fornecedor B",valor:7200},
+            {nome:"Fornecedor C",valor:8500},
+            {nome:"Fornecedor D",valor:7800}
+          ]
+        }
+      ],
       orcamento: [
         { id:1, item:"Buffet (100 pessoas)", valor:8000, pago:false },
         { id:2, item:"Bolo personalizado", valor:600, pago:false },
@@ -111,23 +126,11 @@
       ],
     };
 
-const C = {
-  red:"#E11D48",
-  redD:"#7F1D1D",
-  yellow:"#FACC15",
-  black:"#020617",
-  dark:"#0B1220",
-  surface:"#0F172A",
-  card:"#111827",
-  card2:"#1F2937",
-  text:"#F1F5F9",
-  muted:"#64748B",
-  success:"#22C55E",
-  danger:"#EF4444",
-  blue:"#1D4ED8",
-  purple:"#9333EA",
-  border:"#1E293B",
-};
+    const C = {
+      red:"#D00000",redD:"#8B0000",yellow:"#FFD700",black:"#080808",dark:"#101010",
+      surface:"#181818",card:"#1F1F1F",card2:"#272727",text:"#F2F2F2",muted:"#666",
+      success:"#22C55E",danger:"#EF4444",blue:"#3B82F6",purple:"#8B5CF6",border:"#2C2C2C",
+    };
 
     function EditField({ value, onSave, type="text", style={} }) {
       const [editing, setEditing] = useState(false);
@@ -173,6 +176,7 @@ const C = {
       { id:"guests", icon:"👥", label:"Convidados" },
       { id:"check", icon:"✅", label:"Tarefas" },
       { id:"budget", icon:"💰", label:"Gastos" },
+      { id:"quotes", icon:"📊", label:"Cotações" },
     ];
 
     function BottomNav({ tab, setTab }) {
@@ -207,13 +211,7 @@ const C = {
       const [tab, setTab] = useState("home");
       const [data, setData] = useState(() => loadData() || DD);
       const [addGuest, setAddGuest] = useState(false);
-      const [newGuest, setNewGuest] = useState({
-											nome:"",
-											telefone:"",
-											grupo:"Família",
-											adultos:2,
-											criancas:1
-			});
+      const [newGuest, setNewGuest] = useState({ nome:"", grupo:"Família", adultos:2, criancas:1 });
       const [filterGroup, setFilterGroup] = useState("Todos");
       const [searchQ, setSearchQ] = useState("");
 
