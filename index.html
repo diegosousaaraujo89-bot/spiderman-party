@@ -22,7 +22,7 @@ function App(){
 const [list,setList]=useState([]);
 
 async function load(){
- const r=await fetch("/api/convidados");
+ const r=await fetch("/convidados");
  const d=await r.json();
  setList(d);
 }
@@ -30,13 +30,13 @@ async function load(){
 useEffect(()=>{load()},[]);
 
 const confirm=(id,val)=>{
- fetch("/api/confirmar",{method:"POST",body:JSON.stringify({id,val})})
+ fetch("/confirmar",{method:"POST",body:JSON.stringify({id,val})})
  .then(load);
 };
 
 return(
 <div>
-<h1>🕷️ Spider Party</h1>
+<h1>🕷️ Festa do Arthur 6 Anos </h1>
 {list.map(g=>(
 <div key={g.id} className="card">
 {g.nome}
