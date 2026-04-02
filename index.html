@@ -300,6 +300,11 @@
       const pend = data.convidados.filter(g=>g.confirmado===null);
       const recus = data.convidados.filter(g=>g.confirmado===false);
       const totalPessoas = conf.reduce((a,g)=>a+g.adultos+g.criancas,0);
+      const totalAdultosConf = conf.reduce((a,g)=>a+g.adultos,0);
+      const totalCriancasConf = conf.reduce((a,g)=>a+g.criancas,0);
+      const totalAdultosTodos = data.convidados.reduce((a,g)=>a+g.adultos,0);
+      const totalCriancasTodos = data.convidados.reduce((a,g)=>a+g.criancas,0);
+      const totalGeral = totalAdultosTodos + totalCriancasTodos;
       const checkDone = data.checklist.filter(c=>c.done).length;
       const totalOrc = data.orcamento.reduce((a,o)=>a+o.valor,0);
       const pago = data.orcamento.filter(o=>o.pago).reduce((a,o)=>a+o.valor,0);
@@ -490,11 +495,43 @@
             {tab==="home" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>📊 Resumo</div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
                   <StatCard icon="✅" value={conf.length} label="Confirmados" color={C.success} />
                   <StatCard icon="⏳" value={pend.length} label="Aguardando" color={C.yellow} />
-                  <StatCard icon="👥" value={totalPessoas} label="Pessoas conf." color={C.red} />
                   <StatCard icon="❌" value={recus.length} label="Recusaram" color={C.danger} />
+                  <StatCard icon="👥" value={data.convidados.length} label="Total grupos" color={C.spiderBlue} />
+                </div>
+                <div className="hw-card" style={{ ...cardSt, marginBottom:16, background:`linear-gradient(135deg,#0a1628,#0d1f3c)`, border:`1px solid ${C.spiderBlue}33` }}>
+                  <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:12, letterSpacing:2, color:C.spiderBlue, marginBottom:10 }}>TOTAL DE PESSOAS</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                    {[
+                      { label:"Total geral", val:totalGeral, icon:"🎉", color:"#fff" },
+                      { label:"Adultos", val:totalAdultosTodos, icon:"👤", color:C.spiderBlue },
+                      { label:"Crianças", val:totalCriancasTodos, icon:"👶", color:C.yellow },
+                    ].map((s,i)=>(
+                      <div key={i} style={{ textAlign:"center", background:"rgba(255,255,255,.05)", borderRadius:10, padding:"10px 6px" }}>
+                        <div style={{ fontSize:18 }}>{s.icon}</div>
+                        <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, color:s.color, lineHeight:1.1 }}>{s.val}</div>
+                        <div style={{ fontSize:9, color:C.muted, fontWeight:700, marginTop:2 }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ borderTop:`1px solid ${C.border}`, marginTop:12, paddingTop:10 }}>
+                    <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:11, letterSpacing:2, color:C.muted, marginBottom:8 }}>APENAS CONFIRMADOS</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                      {[
+                        { label:"Total", val:totalPessoas, icon:"✅", color:C.success },
+                        { label:"Adultos", val:totalAdultosConf, icon:"👤", color:C.success },
+                        { label:"Crianças", val:totalCriancasConf, icon:"👶", color:C.success },
+                      ].map((s,i)=>(
+                        <div key={i} style={{ textAlign:"center", background:C.success+"0D", borderRadius:10, padding:"10px 6px" }}>
+                          <div style={{ fontSize:18 }}>{s.icon}</div>
+                          <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, color:s.color, lineHeight:1.1 }}>{s.val}</div>
+                          <div style={{ fontSize:9, color:C.muted, fontWeight:700, marginTop:2 }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>📈 Progresso</div>
                 {[
@@ -541,13 +578,26 @@
             {tab==="guests" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>👥 Convidados ({data.convidados.length})</div>
-                <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                <div style={{ display:"flex", gap:8, marginBottom:10 }}>
                   {[
                     { label:"Enviados", val:data.convidados.filter(g=>g.conviteEnviado).length, color:C.spiderBlue, icon:"📨" },
                     { label:"Aguardando", val:data.convidados.filter(g=>g.conviteEnviado&&g.confirmado===null).length, color:C.yellow, icon:"⏳" },
                     { label:"Confirmados", val:data.convidados.filter(g=>g.confirmado===true).length, color:C.success, icon:"✅" },
                   ].map((s,i)=>(
                     <div key={i} style={{ flex:1, background:s.color+"18", border:`1px solid ${s.color}33`, borderRadius:12, padding:"8px 4px", textAlign:"center" }}>
+                      <div style={{ fontSize:14 }}>{s.icon}</div>
+                      <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:s.color, lineHeight:1 }}>{s.val}</div>
+                      <div style={{ fontSize:9, color:C.muted, fontWeight:700 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                  {[
+                    { label:"Total pessoas", val:totalGeral, color:C.text, icon:"🎉" },
+                    { label:"Adultos", val:totalAdultosTodos, color:C.spiderBlue, icon:"👤" },
+                    { label:"Crianças", val:totalCriancasTodos, color:C.yellow, icon:"👶" },
+                  ].map((s,i)=>(
+                    <div key={i} style={{ flex:1, background:"rgba(255,255,255,.05)", border:`1px solid ${C.border}`, borderRadius:12, padding:"8px 4px", textAlign:"center" }}>
                       <div style={{ fontSize:14 }}>{s.icon}</div>
                       <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:s.color, lineHeight:1 }}>{s.val}</div>
                       <div style={{ fontSize:9, color:C.muted, fontWeight:700 }}>{s.label}</div>
