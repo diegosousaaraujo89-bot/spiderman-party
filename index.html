@@ -54,7 +54,7 @@
     const { useState, useEffect, useCallback, useRef } = React;
 
     /* -- API (servidor Render) -- */
-    const API = "https://festaarthur.onrender.com";
+    const API = window.location.origin;
 
     async function apiGet(path) {
       try { const r = await fetch(API+path); return r.ok ? r.json() : null; } catch { return null; }
@@ -247,21 +247,43 @@
       const [modal, setModal] = useState(null);
       const [toast, setToast] = useState(null);
 
-      /* -- Carrega convidados do servidor ao iniciar e a cada 30s -- */
+      /* -- Carrega tudo do servidor ao iniciar e a cada 30s -- */
       const loadFromServer = useCallback(async () => {
-        const convidados = await apiGet("/api/convidados");
-        if (convidados) {
-          setData(prev => {
-            const updated = { ...prev, convidados };
-            saveLocal(updated);
-            return updated;
-          });
-        }
+        const [convidados, checklist, orcamento, cotacoes] = await Promise.all([
+          apiGet("/api/convidados"),
+          apiGet("/api/dados/checklist"),
+          apiGet("/api/dados/orcamento"),
+          apiGet("/api/dados/cotacoes"),
+        ]);
+        setData(prev => {
+          const updated = {
+            ...prev,
+            ...(convidados ? { convidados } : {}),
+            ...(checklist  ? { checklist }  : {}),
+            ...(orcamento  ? { orcamento }  : {}),
+            ...(cotacoes   ? { cotacoes }   : {}),
+          };
+          saveLocal(updated);
+          return updated;
+        });
         setLoading(false);
       }, []);
 
       useEffect(() => {
-        loadFromServer();
+        // Seed defaults to server if not yet saved
+        const seedDefaults = async () => {
+          const [cl, orc, cot] = await Promise.all([
+            apiGet("/api/dados/checklist"),
+            apiGet("/api/dados/orcamento"),
+            apiGet("/api/dados/cotacoes"),
+          ]);
+          const local = loadLocal() || DD;
+          if (!cl)  await apiPut("/api/dados/checklist",  local.checklist);
+          if (!orc) await apiPut("/api/dados/orcamento",  local.orcamento);
+          if (!cot) await apiPut("/api/dados/cotacoes",   local.cotacoes);
+          loadFromServer();
+        };
+        seedDefaults();
         const interval = setInterval(loadFromServer, 30000);
         return () => clearInterval(interval);
       }, [loadFromServer]);
@@ -283,10 +305,26 @@
       const checkPct = Math.round((checkDone/data.checklist.length)*100);
       const pagoPct = totalOrc>0?Math.round((pago/totalOrc)*100):0;
 
-      const toggleCheck = id => persist({...data, checklist:data.checklist.map(c=>c.id===id?{...c,done:!c.done}:c)});
-      const togglePago = id => persist({...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,pago:!o.pago}:o)});
-      const editCheck = (id,v) => persist({...data, checklist:data.checklist.map(c=>c.id===id?{...c,item:v}:c)});
-      const editOrc = (id,f,v) => persist({...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,[f]:v}:o)});
+      const toggleCheck = async (id) => {
+        const updated = {...data, checklist:data.checklist.map(c=>c.id===id?{...c,done:!c.done}:c)};
+        persist(updated);
+        await apiPut("/api/dados/checklist", updated.checklist);
+      };
+      const togglePago = async (id) => {
+        const updated = {...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,pago:!o.pago}:o)};
+        persist(updated);
+        await apiPut("/api/dados/orcamento", updated.orcamento);
+      };
+      const editCheck = async (id,v) => {
+        const updated = {...data, checklist:data.checklist.map(c=>c.id===id?{...c,item:v}:c)};
+        persist(updated);
+        await apiPut("/api/dados/checklist", updated.checklist);
+      };
+      const editOrc = async (id,f,v) => {
+        const updated = {...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,[f]:v}:o)};
+        persist(updated);
+        await apiPut("/api/dados/orcamento", updated.orcamento);
+      };
 
       /* -- Operações de convidado sincronizadas com servidor -- */
       const toggleConfirm = async (id, val) => {
@@ -304,8 +342,16 @@
         await apiPut("/api/convidados/"+id, {[f]:v});
       };
       const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3500); };
-      const toggleEscolhido = (srv,oid) => persist({...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===oid?!o.escolhido:false}))}:s)});
-      const editCotacao = (srv,oid,f,v) => persist({...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>o.id===oid?{...o,[f]:f==="valor"?parseFloat(v)||0:v}:o)}:s)});
+      const toggleEscolhido = async (srv,oid) => {
+        const updated = {...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===oid?!o.escolhido:false}))}:s)};
+        persist(updated);
+        await apiPut("/api/dados/cotacoes", updated.cotacoes);
+      };
+      const editCotacao = async (srv,oid,f,v) => {
+        const updated = {...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>o.id===oid?{...o,[f]:f==="valor"?parseFloat(v)||0:v}:o)}:s)};
+        persist(updated);
+        await apiPut("/api/dados/cotacoes", updated.cotacoes);
+      };
 
       const marcarEnviado = async (id) => {
         persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,conviteEnviado:true}:g)});
