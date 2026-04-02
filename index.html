@@ -360,14 +360,42 @@
         await apiPut("/api/convidados/"+id, {[f]:v});
       };
       const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3500); };
-      const saveCotacoes = async (cotacoes) => { persist({...data,cotacoes}); await apiPut("/api/dados/cotacoes", cotacoes); };
+      // Mapeamento cotacoes -> id do item no orcamento
+      const COT_ORC_MAP = { "Buffet":1, "Bolo":2, "Decoracao":4, "DJ Animacao":5, "Fotografo":6 };
+
+      const saveCotacoesEOrcamento = async (cotacoes, orcamento) => {
+        const next = {...data, cotacoes, orcamento};
+        persist(next);
+        await Promise.all([
+          apiPut("/api/dados/cotacoes", cotacoes),
+          apiPut("/api/dados/orcamento", orcamento),
+        ]);
+      };
+
+      const saveCotacoes = async (cotacoes) => {
+        // Always sort each service options by valor ascending (cheapest first)
+        const sorted = cotacoes.map(s=>({...s, opcoes:[...s.opcoes].sort((a,b)=>a.valor-b.valor)}));
+        // Sync orcamento: use escolhido price, or cheapest if none selected
+        const orcamento = data.orcamento.map(o => {
+          const orcId = o.id;
+          const srv = Object.keys(COT_ORC_MAP).find(k => COT_ORC_MAP[k] === orcId);
+          if (!srv) return o;
+          const servico = sorted.find(s => s.servico === srv);
+          if (!servico || !servico.opcoes.length) return o;
+          const escolhido = servico.opcoes.find(op => op.escolhido);
+          const melhor = servico.opcoes[0]; // already sorted, index 0 = cheapest
+          return { ...o, valor: escolhido ? escolhido.valor : melhor.valor };
+        });
+        await saveCotacoesEOrcamento(sorted, orcamento);
+      };
+
       const toggleEscolhido = (srv,oid) => {
         const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===oid?!o.escolhido:false}))}:s);
         saveCotacoes(cotacoes);
       };
       const editCotacao = (srv,oid,f,v) => {
         const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>o.id===oid?{...o,[f]:f==="valor"?parseFloat(v)||0:v}:o)}:s);
-        saveCotacoes(cotacoes);
+        saveCotacoes(cotacoes); // saveCotacoes already re-sorts and syncs orcamento
       };
       const editServico = (srv,novoNome) => {
         const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,servico:novoNome}:s);
@@ -761,6 +789,7 @@
                           <EditField value={o.valor} type="number" onSave={v=>editOrc(o.id,"valor",v)}
                             style={{ fontFamily:"'Bebas Neue',cursive", fontSize:20, color:o.pago?C.success:C.yellow, lineHeight:1 }} />
                         </div>
+                        {(()=>{ const srv = Object.keys(COT_ORC_MAP).find(k=>COT_ORC_MAP[k]===o.id); if(!srv) return null; const s = data.cotacoes.find(c=>c.servico===srv); if(!s) return null; const escolhido = s.opcoes.find(op=>op.escolhido); const melhor = [...s.opcoes].sort((a,b)=>a.valor-b.valor)[0]; return (<div style={{ fontSize:10, color:escolhido?C.success:C.spiderBlue, marginTop:2, fontWeight:700 }}>{escolhido ? "✓ "+escolhido.fornecedor : "💡 Menor: "+melhor.fornecedor}</div>); })()}
                       </div>
                       <button className="hw-btn" onClick={()=>togglePago(o.id)} style={btnSm(o.pago?C.success:C.muted)}>
                         {o.pago?"Pago ✅":"Pagar"}
