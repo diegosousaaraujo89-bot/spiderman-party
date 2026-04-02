@@ -1,0 +1,4 @@
+node_modules/
+festa.db
+*.db-journal
+.env

@@ -53,13 +53,29 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback, useRef } = React;
 
-    /* -- STORAGE (localStorage para PWA offline) -- */
-    const SK = "spiderman-festa-2027-v2";
-    function loadData() {
+    /* -- API (servidor Render) -- */
+    const API = window.location.origin;
+
+    async function apiGet(path) {
+      try { const r = await fetch(API+path); return r.ok ? r.json() : null; } catch { return null; }
+    }
+    async function apiPost(path, body) {
+      try { const r = await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok ? r.json() : null; } catch { return null; }
+    }
+    async function apiPut(path, body) {
+      try { const r = await fetch(API+path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok ? r.json() : null; } catch { return null; }
+    }
+    async function apiDel(path) {
+      try { const r = await fetch(API+path,{method:"DELETE"}); return r.ok ? r.json() : null; } catch { return null; }
+    }
+
+    /* -- LOCAL STORAGE fallback para checklist/orcamento/cotacoes -- */
+    const SK = "spiderman-festa-2027-v3";
+    function loadLocal() {
       try { const r = localStorage.getItem(SK); return r ? JSON.parse(r) : null; } catch { return null; }
     }
-    function saveData(d) {
-      try { localStorage.setItem(SK, JSON.stringify(d)); } catch(e) { console.error(e); }
+    function saveLocal(d) {
+      try { localStorage.setItem(SK, JSON.stringify(d)); } catch(e) {}
     }
 
     const DD = {
@@ -222,7 +238,8 @@
     function App() {
       const [splash, setSplash] = useState(true);
       const [tab, setTab] = useState("home");
-      const [data, setData] = useState(() => loadData() || DD);
+      const [data, setData] = useState(() => loadLocal() || DD);
+      const [loading, setLoading] = useState(true);
       const [addGuest, setAddGuest] = useState(false);
       const [newGuest, setNewGuest] = useState({ nome:"", grupo:"Família", adultos:2, criancas:1 });
       const [filterGroup, setFilterGroup] = useState("Todos");
@@ -230,7 +247,30 @@
       const [modal, setModal] = useState(null);
       const [toast, setToast] = useState(null);
 
-      const persist = useCallback((nd) => { setData(nd); saveData(nd); }, []);
+      /* -- Carrega convidados do servidor ao iniciar e a cada 30s -- */
+      const loadFromServer = useCallback(async () => {
+        const convidados = await apiGet("/api/convidados");
+        if (convidados) {
+          setData(prev => {
+            const updated = { ...prev, convidados };
+            saveLocal(updated);
+            return updated;
+          });
+        }
+        setLoading(false);
+      }, []);
+
+      useEffect(() => {
+        loadFromServer();
+        const interval = setInterval(loadFromServer, 30000);
+        return () => clearInterval(interval);
+      }, [loadFromServer]);
+
+      /* persist: salva local + sync servidor para convidados */
+      const persist = useCallback((nd) => {
+        setData(nd);
+        saveLocal(nd);
+      }, []);
 
       const conf = data.convidados.filter(g=>g.confirmado===true);
       const pend = data.convidados.filter(g=>g.confirmado===null);
@@ -244,22 +284,54 @@
       const pagoPct = totalOrc>0?Math.round((pago/totalOrc)*100):0;
 
       const toggleCheck = id => persist({...data, checklist:data.checklist.map(c=>c.id===id?{...c,done:!c.done}:c)});
-      const toggleConfirm = (id,val) => persist({...data, convidados:data.convidados.map(g=>g.id===id?{...g,confirmado:g.confirmado===val?null:val}:g)});
       const togglePago = id => persist({...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,pago:!o.pago}:o)});
-      const removeGuest = id => persist({...data, convidados:data.convidados.filter(g=>g.id!==id)});
-      const editGuest = (id,f,v) => persist({...data, convidados:data.convidados.map(g=>g.id===id?{...g,[f]:v}:g)});
       const editCheck = (id,v) => persist({...data, checklist:data.checklist.map(c=>c.id===id?{...c,item:v}:c)});
       const editOrc = (id,f,v) => persist({...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,[f]:v}:o)});
-      const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3000); };
+
+      /* -- Operações de convidado sincronizadas com servidor -- */
+      const toggleConfirm = async (id, val) => {
+        const g = data.convidados.find(c=>c.id===id);
+        const novoVal = g && g.confirmado===val ? null : val;
+        persist({...data, convidados:data.convidados.map(c=>c.id===id?{...c,confirmado:novoVal}:c)});
+        await apiPut("/api/convidados/"+id, {confirmado: novoVal});
+      };
+      const removeGuest = async (id) => {
+        persist({...data, convidados:data.convidados.filter(g=>g.id!==id)});
+        await apiDel("/api/convidados/"+id);
+      };
+      const editGuest = async (id,f,v) => {
+        persist({...data, convidados:data.convidados.map(g=>g.id===id?{...g,[f]:v}:g)});
+        await apiPut("/api/convidados/"+id, {[f]:v});
+      };
+      const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3500); };
       const toggleEscolhido = (srv,oid) => persist({...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===oid?!o.escolhido:false}))}:s)});
       const editCotacao = (srv,oid,f,v) => persist({...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>o.id===oid?{...o,[f]:f==="valor"?parseFloat(v)||0:v}:o)}:s)});
-      const marcarEnviado = (id) => persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,conviteEnviado:true}:g)});
-      const confirmarConvite = (id) => { persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,confirmado:true,conviteEnviado:true}:g)}); showToast("Presenca confirmada!"); setModal(null); };
-      const recusarConvite = (id) => { persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,confirmado:false}:g)}); showToast("Marcado como nao vai."); setModal(null); };
-      const addGuestFn = () => {
+
+      const marcarEnviado = async (id) => {
+        persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,conviteEnviado:true}:g)});
+        await apiPut("/api/convidados/"+id, {conviteEnviado:true});
+      };
+      const confirmarConvite = async (id) => {
+        persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,confirmado:true,conviteEnviado:true}:g)});
+        await apiPut("/api/convidados/"+id, {confirmado:true,conviteEnviado:true});
+        showToast("Presenca confirmada! ✅"); setModal(null);
+      };
+      const recusarConvite = async (id) => {
+        persist({...data,convidados:data.convidados.map(g=>g.id===id?{...g,confirmado:false}:g)});
+        await apiPut("/api/convidados/"+id, {confirmado:false});
+        showToast("Marcado como nao vai. ❌"); setModal(null);
+      };
+      const addGuestFn = async () => {
         if (!newGuest.nome.trim()) return;
-        persist({...data, convidados:[...data.convidados,{...newGuest,id:Date.now(),confirmado:null,adultos:+newGuest.adultos,criancas:+newGuest.criancas}]});
-        setNewGuest({nome:"",grupo:"Família",adultos:2,criancas:1}); setAddGuest(false);
+        const created = await apiPost("/api/convidados", {
+          nome:newGuest.nome.trim(), grupo:newGuest.grupo,
+          adultos:+newGuest.adultos, criancas:+newGuest.criancas,
+          telefone:newGuest.telefone||""
+        });
+        if (created) {
+          persist({...data, convidados:[...data.convidados, created]});
+        }
+        setNewGuest({nome:"",grupo:"Família",adultos:2,criancas:1,telefone:""}); setAddGuest(false);
       };
 
       const groups = ["Todos","Família","Escola","Amigos"];
@@ -291,11 +363,11 @@
                 </div>
                 <div style={{ fontSize:11, color:"#666", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
                 <div style={{ display:"flex", gap:10, marginBottom:18 }}>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const t=encodeURIComponent("Ola "+modal.nome+"! Voce esta convidado para a Festa do Arthur - Homem Aranha em Acao! Data: 09/01/2027. Confirme: SIM ou NAO."); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto!"); }}
+                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Ola, "+modal.nome+"! Voce esta convidado para a Festa do Arthur - Homem Aranha em Acao! Data: 09/01/2027.\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
                     style={{ flex:1, background:"rgba(37,211,102,.15)", color:"#25D366", border:"1.5px solid rgba(37,211,102,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                     <span style={{ fontSize:22 }}>💬</span>WhatsApp
                   </button>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const t=encodeURIComponent("Festa do Arthur - Homem Aranha em Acao! 09/01/2027. Confirme: SIM ou NAO."); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto!"); }}
+                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Festa do Arthur - Homem Aranha em Acao! 09/01/2027. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto com link!"); }}
                     style={{ flex:1, background:"rgba(26,115,232,.15)", color:"#1A73E8", border:"1.5px solid rgba(26,115,232,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                     <span style={{ fontSize:22 }}>📩</span>SMS
                   </button>
@@ -323,6 +395,7 @@
               <span style={{ background:C.yellow, color:C.black, fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
             </div>
             <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}>HOMEM ARANHA EM ACAO</div>
+            {loading && <div style={{ fontSize:10, color:C.spiderBlue, fontWeight:700, marginTop:2 }}>🔄 Sincronizando...</div>}
             <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:700, marginBottom:10 }}>Arthur Mosca · 6 Anos · 100 Pessoas 🎉</div>
           </div>
 
