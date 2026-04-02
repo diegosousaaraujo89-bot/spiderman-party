@@ -246,6 +246,8 @@
       const [searchQ, setSearchQ] = useState("");
       const [modal, setModal] = useState(null);
       const [toast, setToast] = useState(null);
+      const [addingCheck, setAddingCheck] = useState(false);
+      const [newCheck, setNewCheck] = useState({ item:"", categoria:"Buffet" });
 
       /* -- Carrega tudo do servidor ao iniciar e a cada 30s -- */
       const loadFromServer = useCallback(async () => {
@@ -310,6 +312,17 @@
         persist(updated);
         await apiPut("/api/dados/checklist", updated.checklist);
       };
+      const removeCheck = async (id) => {
+        const updated = {...data, checklist:data.checklist.filter(c=>c.id!==id)};
+        persist(updated);
+        await apiPut("/api/dados/checklist", updated.checklist);
+      };
+      const addCheck = async (item, categoria) => {
+        const newItem = { id: Date.now(), item, categoria, done: false };
+        const updated = {...data, checklist:[...data.checklist, newItem]};
+        persist(updated);
+        await apiPut("/api/dados/checklist", updated.checklist);
+      };
       const togglePago = async (id) => {
         const updated = {...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,pago:!o.pago}:o)};
         persist(updated);
@@ -342,15 +355,41 @@
         await apiPut("/api/convidados/"+id, {[f]:v});
       };
       const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3500); };
-      const toggleEscolhido = async (srv,oid) => {
-        const updated = {...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===oid?!o.escolhido:false}))}:s)};
-        persist(updated);
-        await apiPut("/api/dados/cotacoes", updated.cotacoes);
+      const saveCotacoes = async (cotacoes) => { persist({...data,cotacoes}); await apiPut("/api/dados/cotacoes", cotacoes); };
+      const toggleEscolhido = (srv,oid) => {
+        const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>({...o,escolhido:o.id===oid?!o.escolhido:false}))}:s);
+        saveCotacoes(cotacoes);
       };
-      const editCotacao = async (srv,oid,f,v) => {
-        const updated = {...data,cotacoes:data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>o.id===oid?{...o,[f]:f==="valor"?parseFloat(v)||0:v}:o)}:s)};
-        persist(updated);
-        await apiPut("/api/dados/cotacoes", updated.cotacoes);
+      const editCotacao = (srv,oid,f,v) => {
+        const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.map(o=>o.id===oid?{...o,[f]:f==="valor"?parseFloat(v)||0:v}:o)}:s);
+        saveCotacoes(cotacoes);
+      };
+      const editServico = (srv,novoNome) => {
+        const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,servico:novoNome}:s);
+        saveCotacoes(cotacoes);
+      };
+      const removeServico = (srv) => {
+        const cotacoes = data.cotacoes.filter(s=>s.servico!==srv);
+        saveCotacoes(cotacoes);
+      };
+      const addServico = () => {
+        const nome = "Novo Servico "+(data.cotacoes.length+1);
+        const cotacoes = [...data.cotacoes, { servico:nome, opcoes:[
+          { id:"n"+Date.now()+"a", fornecedor:"Fornecedor 1", contato:"(11) 00000-0000", valor:0, obs:"Descricao", escolhido:false },
+          { id:"n"+Date.now()+"b", fornecedor:"Fornecedor 2", contato:"(11) 00000-0000", valor:0, obs:"Descricao", escolhido:false },
+          { id:"n"+Date.now()+"c", fornecedor:"Fornecedor 3", contato:"(11) 00000-0000", valor:0, obs:"Descricao", escolhido:false },
+        ]}];
+        saveCotacoes(cotacoes);
+      };
+      const addOpcao = (srv) => {
+        const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:[...s.opcoes,
+          { id:"n"+Date.now(), fornecedor:"Novo Fornecedor", contato:"(11) 00000-0000", valor:0, obs:"Descricao", escolhido:false }
+        ]}:s);
+        saveCotacoes(cotacoes);
+      };
+      const removeOpcao = (srv,oid) => {
+        const cotacoes = data.cotacoes.map(s=>s.servico===srv?{...s,opcoes:s.opcoes.filter(o=>o.id!==oid)}:s);
+        saveCotacoes(cotacoes);
       };
 
       const marcarEnviado = async (id) => {
@@ -607,18 +646,36 @@
                       </div>
                       <div style={cardSt}>
                         {items.map((c,i)=>(
-                          <div key={c.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 0", borderBottom:i<items.length-1?`1px solid ${C.border}`:"none", cursor:"pointer" }} onClick={()=>toggleCheck(c.id)}>
-                            <div className="hw-check" style={{ width:24, height:24, borderRadius:7, border:`2px solid ${c.done?C.success:C.border}`, background:c.done?C.success:"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:14, boxShadow:c.done?`0 0 10px ${C.success}55`:"none" }}>
+                          <div key={c.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 0", borderBottom:i<items.length-1?`1px solid ${C.border}`:"none" }}>
+                            <div className="hw-check" style={{ width:24, height:24, borderRadius:7, border:`2px solid ${c.done?C.success:C.border}`, background:c.done?C.success:"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:14, cursor:"pointer", boxShadow:c.done?`0 0 10px ${C.success}55`:"none" }} onClick={()=>toggleCheck(c.id)}>
                               {c.done&&"✓"}
                             </div>
-                            <EditField value={c.item} onSave={v=>editCheck(c.id,v)}
-                              style={{ fontSize:14, fontWeight:600, opacity:c.done?.4:1, textDecoration:c.done?"line-through":"none" }} />
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <EditField value={c.item} onSave={v=>editCheck(c.id,v)}
+                                style={{ fontSize:14, fontWeight:600, opacity:c.done?.4:1, textDecoration:c.done?"line-through":"none" }} />
+                            </div>
+                            <button className="hw-btn" onClick={()=>removeCheck(c.id)} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:15, flexShrink:0, padding:"0 4px" }}>🗑️</button>
                           </div>
                         ))}
                       </div>
                     </div>
                   );
                 })}
+                {!addingCheck ? (
+                  <button className="hw-btn" style={btnP} onClick={()=>setAddingCheck(true)}>+ Nova Tarefa</button>
+                ) : (
+                  <div className="hw-fade" style={{ ...cardSt, borderLeft:`4px solid ${C.yellow}` }}>
+                    <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, color:C.yellow, marginBottom:12, letterSpacing:1 }}>NOVA TAREFA</div>
+                    <input style={{ ...inpSt, marginBottom:8 }} placeholder="Descrição da tarefa" value={newCheck.item} onChange={e=>setNewCheck({...newCheck,item:e.target.value})} />
+                    <select style={{ ...inpSt, marginBottom:12 }} value={newCheck.categoria} onChange={e=>setNewCheck({...newCheck,categoria:e.target.value})}>
+                      {cats.map(c=><option key={c}>{c}</option>)}
+                    </select>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button className="hw-btn" style={{ ...btnP, marginTop:0 }} onClick={()=>{ if(newCheck.item.trim()){ addCheck(newCheck.item.trim(), newCheck.categoria); setNewCheck({item:"",categoria:"Buffet"}); setAddingCheck(false); } }}>Salvar</button>
+                      <button className="hw-btn" style={{ ...btnP, marginTop:0, background:C.card2, boxShadow:"none" }} onClick={()=>setAddingCheck(false)}>Cancelar</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -667,15 +724,20 @@
             {tab==="cotacoes" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.spiderBlue, marginBottom:4 }}>📋 Cotacoes</div>
-                <div style={{ fontSize:12, color:C.muted, marginBottom:16 }}>Compare 3 opcoes por servico e marque o escolhido</div>
+                <div style={{ fontSize:12, color:C.muted, marginBottom:16 }}>Toque em qualquer campo para editar • Selecione o melhor fornecedor</div>
                 {data.cotacoes.map(s=>{
                   const escolhido = s.opcoes.find(o=>o.escolhido);
                   const menorVal = Math.min(...s.opcoes.map(o=>o.valor));
                   return (
                     <div key={s.servico} style={{ marginBottom:20 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                        <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, letterSpacing:2, color:C.spiderBlue }}>{s.servico.toUpperCase()}</span>
-                        {escolhido && <span style={{ background:C.success+"22", color:C.success, borderRadius:20, padding:"2px 10px", fontSize:10, fontWeight:700 }}>Escolhido: {escolhido.fornecedor}</span>}
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <EditField value={s.servico} onSave={v=>editServico(s.servico,v)} style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, letterSpacing:2, color:C.spiderBlue }} />
+                        </div>
+                        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                          {escolhido && <span style={{ background:C.success+"22", color:C.success, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>✓ {escolhido.fornecedor}</span>}
+                          <button className="hw-btn" onClick={()=>removeServico(s.servico)} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:14 }}>🗑️</button>
+                        </div>
                       </div>
                       {s.opcoes.map((o,idx)=>{
                         const isBest = o.valor===menorVal;
@@ -686,26 +748,39 @@
                                 {idx===0?"🥇":idx===1?"🥈":"🥉"}
                               </div>
                               <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                                  <span style={{ fontWeight:700, fontSize:13 }}>{o.fornecedor}</span>
-                                  {isBest && !o.escolhido && <span style={{ background:C.spiderBlue+"22", color:C.spiderBlue, fontSize:9, fontWeight:700, borderRadius:20, padding:"2px 7px" }}>Menor preco</span>}
-                                  {o.escolhido && <span style={{ background:C.success+"22", color:C.success, fontSize:9, fontWeight:700, borderRadius:20, padding:"2px 7px" }}>Escolhido</span>}
+                                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                                  <EditField value={o.fornecedor} onSave={v=>editCotacao(s.servico,o.id,"fornecedor",v)} style={{ fontWeight:700, fontSize:13 }} />
+                                  <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                                    {isBest && !o.escolhido && <span style={{ background:C.spiderBlue+"22", color:C.spiderBlue, fontSize:9, fontWeight:700, borderRadius:20, padding:"2px 7px" }}>+ barato</span>}
+                                    {o.escolhido && <span style={{ background:C.success+"22", color:C.success, fontSize:9, fontWeight:700, borderRadius:20, padding:"2px 7px" }}>✓</span>}
+                                    <button className="hw-btn" onClick={()=>removeOpcao(s.servico,o.id)} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:13, padding:"0 2px" }}>🗑️</button>
+                                  </div>
                                 </div>
-                                <div style={{ color:C.spiderBlue, fontSize:11, marginTop:2 }}>📱 {o.contato}</div>
-                                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:o.escolhido?C.success:isBest?C.spiderBlue:C.text, lineHeight:1.2 }}>R$ {o.valor.toLocaleString("pt-BR")}</div>
-                                <div style={{ color:C.muted, fontSize:11 }}>{o.obs}</div>
+                                <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:3 }}>
+                                  <span style={{ color:C.muted, fontSize:11 }}>📱</span>
+                                  <EditField value={o.contato} onSave={v=>editCotacao(s.servico,o.id,"contato",v)} style={{ color:C.spiderBlue, fontSize:11, fontWeight:600 }} />
+                                </div>
+                                <div style={{ display:"flex", alignItems:"center", gap:3, marginBottom:3 }}>
+                                  <span style={{ color:C.muted, fontSize:11 }}>R$</span>
+                                  <EditField value={o.valor} type="number" onSave={v=>editCotacao(s.servico,o.id,"valor",v)} style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:o.escolhido?C.success:isBest?C.spiderBlue:C.text, lineHeight:1 }} />
+                                </div>
+                                <EditField value={o.obs} onSave={v=>editCotacao(s.servico,o.id,"obs",v)} style={{ color:C.muted, fontSize:11 }} />
                               </div>
                             </div>
                             <button className="hw-btn" onClick={()=>toggleEscolhido(s.servico,o.id)}
                               style={{ ...btnSm(o.escolhido?C.success:C.muted), width:"100%", marginTop:10, padding:"8px", textAlign:"center" }}>
-                              {o.escolhido?"Selecionado — clique para desmarcar":"Selecionar esta opcao"}
+                              {o.escolhido?"✅ Selecionado — toque para desmarcar":"Selecionar este fornecedor"}
                             </button>
                           </div>
                         );
                       })}
+                      <button className="hw-btn" onClick={()=>addOpcao(s.servico)} style={{ ...btnSm(C.spiderBlue), width:"100%", padding:"9px", textAlign:"center", marginBottom:4 }}>
+                        + Adicionar fornecedor
+                      </button>
                     </div>
                   );
                 })}
+                <button className="hw-btn" style={btnP} onClick={()=>addServico()}>+ Novo Serviço</button>
               </div>
             )}
           </div>
