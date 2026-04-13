@@ -515,7 +515,7 @@
               </div>
             </div>
           )}
-          {splash && <Splash onDone={()=>setSplash(false)} />
+          {splash && <Splash onDone={()=>setSplash(false)} />}
 
           {parcelaModal && (
             <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.88)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={()=>setParcelaModal(null)}>
@@ -590,9 +590,9 @@
             <div style={{ height:4, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 16px,transparent 16px,transparent 30px)`, marginBottom:10, borderRadius:2 }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:10, letterSpacing:3, color:C.yellow, opacity:.8 }}>🏁 SONIC</span>
-              <span style={{ background:"#FFD700", color:"#0b1120", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>10/01/2027 - 12:30 HRS</span>
+              <span style={{ background:"#FFD700", color:"#0b1120", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
             </div>
-            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}><span className="sonic-hdr"></span>SONIC EM AÇÃO</div>
+            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}><span className="sonic-hdr"></span>SONIC: GOTTA GO FAST</div>
             {loading && <div style={{ fontSize:10, color:C.spiderBlue, fontWeight:700, marginTop:2 }}>🔄 Sincronizando...</div>}
             <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:700, marginBottom:10 }}>Arthur Mosca · 6 Anos · 100 Pessoas ⚡</div>
           </div>
