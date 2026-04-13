@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Festa do Arthur 🦔</title>
+  <title>Festa do Arthur 🕷️</title>
 
   <!-- PWA -->
   <meta name="theme-color" content="#CC0000" />
@@ -23,7 +23,7 @@
 
   <style>
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
-    body{background:#0a0e1a;font-family:'Nunito',sans-serif;color:#F2F2F2;}
+    body{background:#080808;font-family:'Nunito',sans-serif;color:#F2F2F2;}
     ::-webkit-scrollbar{width:0;height:0;}
     .hw-card{transition:transform .15s ease,box-shadow .15s ease;}
     .hw-card:active{transform:scale(0.985);}
@@ -39,7 +39,7 @@
     .hw-splash{animation:splashOut .6s ease 2.4s both;}
     @keyframes splashOut{to{opacity:0;pointer-events:none;}}
     .hw-car{animation:carRide 2s ease-in-out both;}
-    @keyframes carRide{0%{transform:translateX(-200px) scale(0.5);opacity:0;}60%{transform:translateX(10px) scale(1.1);}80%{transform:translateX(-5px) scale(1);}100%{transform:translateX(0) scale(1);opacity:1;}}
+    @keyframes carRide{0%{transform:translateY(-80px) scale(0.5);opacity:0;}70%{transform:translateY(0) scale(1.1);opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}
     .hw-title-in{animation:titlePop .5s cubic-bezier(.34,1.56,.64,1) .7s both;}
     @keyframes titlePop{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:scale(1);}}
     .hw-progress{transition:width .5s cubic-bezier(.4,0,.2,1);}
@@ -70,7 +70,7 @@
     }
 
     /* -- LOCAL STORAGE fallback para checklist/orcamento/cotacoes -- */
-    const SK = "sonic-festa-2027";
+    const SK = "spiderman-festa-2027-v3";
     function loadLocal() {
       try { const r = localStorage.getItem(SK); return r ? JSON.parse(r) : null; } catch { return null; }
     }
@@ -103,7 +103,7 @@
         { id:4, item:"Contratar DJ/som", categoria:"Entretenimento", done:false },
         { id:5, item:"Encomendar bolo", categoria:"Alimentação", done:false },
         { id:6, item:"Encomendar docinhos", categoria:"Alimentação", done:false },
-        { id:7, item:"Comprar baloes Sonic", categoria:"Decoração", done:false },
+        { id:7, item:"Comprar baloes Homem Aranha", categoria:"Decoração", done:false },
         { id:8, item:"Encomendar painel decorativo", categoria:"Decoração", done:false },
         { id:9, item:"Comprar caixinhas de lembrança", categoria:"Lembranças", done:false },
         { id:10, item:"Imprimir convites", categoria:"Convites", done:false },
@@ -155,10 +155,10 @@
     };
 
     const C = {
-      red:"#1E88E5",redD:"#1565C0",yellow:"#FFD700",black:"#0a0e1a",dark:"#0d1220",
-      surface:"#141c2e",card:"#1a2540",card2:"#1e2d4a",text:"#F2F2F2",muted:"#7A9AC0",
-      success:"#22C55E",danger:"#EF4444",blue:"#1E88E5",purple:"#AB47BC",border:"#253555",
-      spiderBlue:"#1E88E5",spiderRed:"#1E88E5",
+      red:"#CC0000",redD:"#800000",yellow:"#1A73E8",black:"#080808",dark:"#101010",
+      surface:"#0D1117",card:"#161B22",card2:"#21262D",text:"#F2F2F2",muted:"#666",
+      success:"#22C55E",danger:"#EF4444",blue:"#1A73E8",purple:"#8B5CF6",border:"#2C3444",
+      spiderBlue:"#1A73E8",spiderRed:"#CC0000",
     };
 
     function EditField({ value, onSave, type="text", style={} }) {
@@ -192,9 +192,9 @@
         <div className="hw-splash" style={{ position:"fixed", inset:0, zIndex:999, background:`linear-gradient(170deg,${C.redD},${C.red} 55%,#1a0000)`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
           <div style={{ height:6, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 20px,transparent 20px,transparent 40px)`, width:"100%", position:"absolute", top:0 }} />
           <div style={{ height:6, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 20px,transparent 20px,transparent 40px)`, width:"100%", position:"absolute", bottom:0 }} />
-          <div className="hw-car" style={{ fontSize:88, marginBottom:8 }}>🦔</div>
-          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:52, color:"#fff", letterSpacing:3, lineHeight:1, textShadow:`3px 3px 0 #0D47A1`, textAlign:"center" }}>SONIC</div>
-          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:C.yellow, letterSpacing:6, animationDelay:".85s" }}>GOTTA GO FAST</div>
+          <div className="hw-car" style={{ fontSize:80, marginBottom:8 }}>🕷️</div>
+          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:44, color:"#fff", letterSpacing:3, lineHeight:1, textShadow:`3px 3px 0 #800000`, textAlign:"center" }}>HOMEM ARANHA</div>
+          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:C.spiderBlue, letterSpacing:6, animationDelay:".85s" }}>EM ACAO</div>
           <div className="hw-title-in" style={{ marginTop:16, fontSize:13, color:"rgba(255,255,255,.5)", fontWeight:700, animationDelay:"1.1s" }}>Festa do Arthur  09/01/2027</div>
         </div>
       );
@@ -206,7 +206,6 @@
       { id:"check", icon:"✅", label:"Tarefas" },
       { id:"budget", icon:"💰", label:"Gastos" },
       { id:"cotacoes", icon:"📋", label:"Cotações" },
-      { id:"bebidas", icon:"🍺", label:"Bebidas" },
     ];
 
     function BottomNav({ tab, setTab }) {
@@ -249,7 +248,6 @@
       const [toast, setToast] = useState(null);
       const [addingCheck, setAddingCheck] = useState(false);
       const [newCheck, setNewCheck] = useState({ item:"", categoria:"Buffet" });
-      const [numPessoas, setNumPessoas] = useState(100);
 
       /* -- Carrega tudo do servidor ao iniciar e a cada 30s -- */
       const loadFromServer = useCallback(async () => {
@@ -483,11 +481,11 @@
                 </div>
                 <div style={{ fontSize:11, color:"#666", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
                 <div style={{ display:"flex", gap:10, marginBottom:18 }}>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Ola, "+modal.nome+"! Voce esta convidado para a Festa do Arthur - Sonic Gotta Go Fast! Data: 09/01/2027.\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
+                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Ola, "+modal.nome+"! Voce esta convidado para a Festa do Arthur - Homem Aranha em Acao! Data: 09/01/2027.\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
                     style={{ flex:1, background:"rgba(37,211,102,.15)", color:"#25D366", border:"1.5px solid rgba(37,211,102,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                     <span style={{ fontSize:22 }}>💬</span>WhatsApp
                   </button>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Festa do Arthur - Sonic Gotta Go Fast! 09/01/2027. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto com link!"); }}
+                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Festa do Arthur - Homem Aranha em Acao! 09/01/2027. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto com link!"); }}
                     style={{ flex:1, background:"rgba(26,115,232,.15)", color:"#1A73E8", border:"1.5px solid rgba(26,115,232,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                     <span style={{ fontSize:22 }}>📩</span>SMS
                   </button>
@@ -512,11 +510,11 @@
             <div style={{ height:4, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 16px,transparent 16px,transparent 30px)`, marginBottom:10, borderRadius:2 }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:10, letterSpacing:3, color:C.yellow, opacity:.8 }}>🏁 HOMEM ARANHA</span>
-              <span style={{ background:C.yellow, color:"#050A14", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
+              <span style={{ background:C.yellow, color:C.black, fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
             </div>
-            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}>🦔 SONIC: GOTTA GO FAST</div>
+            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}>HOMEM ARANHA EM ACAO</div>
             {loading && <div style={{ fontSize:10, color:C.spiderBlue, fontWeight:700, marginTop:2 }}>🔄 Sincronizando...</div>}
-            <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:700, marginBottom:10 }}>Arthur Mosca · 6 Anos · 100 Pessoas ⚡</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:700, marginBottom:10 }}>Arthur Mosca · 6 Anos · 100 Pessoas 🎉</div>
           </div>
 
           {/* PAGE */}
@@ -579,7 +577,7 @@
                     <div style={{ fontSize:11, color:C.muted, marginTop:6 }}>{p.sub}</div>
                   </div>
                 ))}
-                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#020810)`, border:`1px solid ${C.red}44` }}>
+                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#1a0000)`, border:`1px solid ${C.red}44` }}>
                   <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:12, letterSpacing:2, color:C.yellow, marginBottom:4 }}>ORÇAMENTO TOTAL</div>
                   <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:40, color:C.yellow, lineHeight:1 }}>R$ {totalOrc.toLocaleString("pt-BR")}</div>
                   <div style={{ display:"flex", gap:20, marginTop:6 }}>
@@ -677,7 +675,7 @@
                   ? <button className="hw-btn" style={btnP} onClick={()=>setAddGuest(true)}>+ Adicionar Convidado</button>
                   : (
                     <div className="hw-fade" style={{ ...cardSt, borderLeft:`4px solid ${C.yellow}` }}>
-                      <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, color:C.yellow, marginBottom:12, letterSpacing:1 }}>🦔 NOVO CONVIDADO</div>
+                      <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, color:C.yellow, marginBottom:12, letterSpacing:1 }}>NOVO CONVIDADO</div>
                       <input style={{ ...inpSt, marginBottom:8 }} placeholder="Nome" value={newGuest.nome} onChange={e=>setNewGuest({...newGuest,nome:e.target.value})} />
                       <select style={{ ...inpSt, marginBottom:8 }} value={newGuest.grupo} onChange={e=>setNewGuest({...newGuest,grupo:e.target.value})}>
                         <option>Família</option><option>Escola</option><option>Amigos</option>
@@ -762,7 +760,7 @@
             {tab==="budget" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>💰 Orçamento</div>
-                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#020810)`, border:`1px solid ${C.red}44`, marginBottom:16 }}>
+                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#1a0000)`, border:`1px solid ${C.red}44`, marginBottom:16 }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
                     <div>
                       <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700 }}>Total estimado</div>
@@ -862,123 +860,6 @@
                   );
                 })}
                 <button className="hw-btn" style={btnP} onClick={()=>addServico()}>+ Novo Serviço</button>
-              </div>
-            )}
-          </div>
-
-            {tab==="bebidas" && (
-              <div>
-                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:4 }}>🍺 Calculadora de Bebidas</div>
-                <div style={{ fontSize:12, color:C.muted, marginBottom:14 }}>Estimativa baseada em 4h de festa. Ajuste o número de pessoas.</div>
-
-                <div className="hw-card" style={{ ...cardSt, marginBottom:16, background:`linear-gradient(135deg,#0a1628,#0d1f3c)`, border:`1px solid ${C.spiderBlue}33` }}>
-                  <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.spiderBlue, marginBottom:10 }}>NÚMERO DE PESSOAS</div>
-                  <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                    <button className="hw-btn" onClick={()=>setNumPessoas(n=>Math.max(10,n-10))} style={{ ...btnSm(C.spiderBlue), padding:"8px 16px", fontSize:20, fontWeight:900 }}>−</button>
-                    <div style={{ flex:1, textAlign:"center" }}>
-                      <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:52, color:C.spiderBlue, lineHeight:1 }}>{numPessoas}</div>
-                      <div style={{ fontSize:11, color:C.muted, fontWeight:700 }}>pessoas</div>
-                    </div>
-                    <button className="hw-btn" onClick={()=>setNumPessoas(n=>n+10)} style={{ ...btnSm(C.spiderBlue), padding:"8px 16px", fontSize:20, fontWeight:900 }}>+</button>
-                  </div>
-                  <div style={{ display:"flex", gap:8, marginTop:12 }}>
-                    {[50,75,100,150,200].map(n=>(
-                      <button key={n} className="hw-btn" onClick={()=>setNumPessoas(n)}
-                        style={{ ...btnSm(numPessoas===n?C.spiderBlue:C.muted), flex:1, padding:"6px 4px", textAlign:"center" }}>{n}</button>
-                    ))}
-                  </div>
-                </div>
-
-                {(()=>{
-                  const p = numPessoas;
-                  // Cálculos por pessoa para festa de 4h
-                  // Água: 500ml por pessoa = 0.5L
-                  // Refrigerante (Coca, Guaraná, Fanta): ~300ml cada por pessoa
-                  // Suco: ~250ml por pessoa
-                  // Chopp: ~600ml por pessoa (1 caneca)
-                  const bebidas = [
-                    {
-                      nome:"Água", icon:"💧", color:"#60A5FA",
-                      itens:[
-                        { desc:"Garrafas 500ml", qtd: Math.ceil(p * 1.5), unidade:"garrafas", obs:"1,5 un/pessoa" },
-                        { desc:"Galão 20L (alternativa)", qtd: Math.ceil(p * 0.5 / 20), unidade:"galões", obs:"0,5L/pessoa" },
-                      ]
-                    },
-                    {
-                      nome:"Coca-Cola", icon:"🥤", color:"#EF4444",
-                      itens:[
-                        { desc:"Garrafas 2L", qtd: Math.ceil(p * 0.3 / 2), unidade:"garrafas", obs:"300ml/pessoa" },
-                        { desc:"Latas 350ml", qtd: Math.ceil(p * 0.3 / 0.35), unidade:"latas", obs:"alternativa" },
-                      ]
-                    },
-                    {
-                      nome:"Guaraná", icon:"🟢", color:"#22C55E",
-                      itens:[
-                        { desc:"Garrafas 2L", qtd: Math.ceil(p * 0.3 / 2), unidade:"garrafas", obs:"300ml/pessoa" },
-                        { desc:"Latas 350ml", qtd: Math.ceil(p * 0.3 / 0.35), unidade:"latas", obs:"alternativa" },
-                      ]
-                    },
-                    {
-                      nome:"Fanta", icon:"🟠", color:"#F97316",
-                      itens:[
-                        { desc:"Garrafas 2L", qtd: Math.ceil(p * 0.25 / 2), unidade:"garrafas", obs:"250ml/pessoa" },
-                        { desc:"Latas 350ml", qtd: Math.ceil(p * 0.25 / 0.35), unidade:"latas", obs:"alternativa" },
-                      ]
-                    },
-                    {
-                      nome:"Suco de Laranja", icon:"🍊", color:"#FB923C",
-                      itens:[
-                        { desc:"Caixinhas 1L", qtd: Math.ceil(p * 0.25), unidade:"caixinhas", obs:"250ml/pessoa" },
-                        { desc:"Pó p/ preparo", qtd: Math.ceil(p * 0.25 / 2), unidade:"pacotes", obs:"cada faz 2L" },
-                      ]
-                    },
-                    {
-                      nome:"Chopp", icon:"🍺", color:"#FCD34D",
-                      itens:[
-                        { desc:"Litros", qtd: Math.ceil(p * 0.6), unidade:"litros", obs:"600ml/pessoa" },
-                        { desc:"Barril 30L", qtd: Math.ceil(p * 0.6 / 30), unidade:"barris", obs:"30L cada" },
-                        { desc:"Barril 50L", qtd: Math.ceil(p * 0.6 / 50), unidade:"barris", obs:"50L cada" },
-                      ]
-                    },
-                  ];
-
-                  return bebidas.map(b=>(
-                    <div key={b.nome} className="hw-card" style={{ ...cardSt, marginBottom:12, borderLeft:`4px solid ${b.color}` }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-                        <div style={{ width:40, height:40, borderRadius:12, background:b.color+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{b.icon}</div>
-                        <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:1, color:b.color }}>{b.nome.toUpperCase()}</div>
-                      </div>
-                      {b.itens.map((it,i)=>(
-                        <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderTop:`1px solid ${C.border}` }}>
-                          <div>
-                            <div style={{ fontWeight:700, fontSize:13 }}>{it.desc}</div>
-                            <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{it.obs}</div>
-                          </div>
-                          <div style={{ textAlign:"right" }}>
-                            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:32, color:b.color, lineHeight:1 }}>{it.qtd}</div>
-                            <div style={{ fontSize:10, color:C.muted, fontWeight:700 }}>{it.unidade}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ));
-                })()}
-
-                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#020810)`, border:`1px solid ${C.red}44` }}>
-                  <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.yellow, marginBottom:8 }}>💡 DICAS IMPORTANTES</div>
-                  {[
-                    "Compre 10–15% a mais para não faltar",
-                    "Calcule ~60% adultos e ~40% crianças para refrigerantes",
-                    "Gelo: 1kg por pessoa (cubos e granulado)",
-                    "Chopp: confirme com chopeira — barril 30L = ~83 canecas de 350ml",
-                    "Suco: prefira caixinhas prontas para facilitar o serviço",
-                    "Água: deixe sempre gelada e de fácil acesso",
-                  ].map((d,i)=>(
-                    <div key={i} style={{ fontSize:12, color:"rgba(255,255,255,.7)", padding:"6px 0", borderBottom:i<5?`1px solid rgba(255,255,255,.08)`:"none", display:"flex", gap:8 }}>
-                      <span style={{ color:C.yellow, flexShrink:0 }}>•</span>{d}
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>

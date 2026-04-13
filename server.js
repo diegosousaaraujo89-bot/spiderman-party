@@ -165,7 +165,7 @@ function paginaConfirmacao(guest) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Você foi convidado! 🦔</title>
+<title>Você foi convidado! 🕷️</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -175,13 +175,13 @@ body{background:#0a0a0a;font-family:'Nunito',sans-serif;color:#fff;overflow-x:hi
 #intro{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;transition:opacity .8s ease;}
 #intro.hide{opacity:0;pointer-events:none;}
 
-/* Sonic rings animados */
+/* Teia de aranha SVG animada */
 .web-container{position:absolute;inset:0;overflow:hidden;}
 .web-container svg{width:100%;height:100%;opacity:.18;}
 
 /* Web lines animadas */
 @keyframes webDraw{from{stroke-dashoffset:800;}to{stroke-dashoffset:0;}}
-.web-line{stroke:#FFD700;stroke-width:1;fill:none;stroke-dasharray:800;animation:webDraw 2s ease forwards;}
+.web-line{stroke:#CC0000;stroke-width:1;fill:none;stroke-dasharray:800;animation:webDraw 2s ease forwards;}
 .web-line:nth-child(2){animation-delay:.2s;}
 .web-line:nth-child(3){animation-delay:.4s;}
 .web-line:nth-child(4){animation-delay:.6s;}
@@ -192,24 +192,24 @@ body{background:#0a0a0a;font-family:'Nunito',sans-serif;color:#fff;overflow-x:hi
 
 /* Partículas vermelhas */
 .particles{position:absolute;inset:0;pointer-events:none;}
-.particle{position:absolute;width:4px;height:4px;border-radius:50%;background:#1E88E5;animation:float linear infinite;}
+.particle{position:absolute;width:4px;height:4px;border-radius:50%;background:#CC0000;animation:float linear infinite;}
 @keyframes float{0%{transform:translateY(100vh) rotate(0deg);opacity:1;}100%{transform:translateY(-100px) rotate(720deg);opacity:0;}}
 
 /* Aranha descendo */
 @keyframes spiderDrop{0%{transform:translateY(-120px);opacity:0;}60%{transform:translateY(10px);opacity:1;}80%{transform:translateY(-8px);}100%{transform:translateY(0);opacity:1;}}
-.spider-drop{animation:spiderDrop 1s cubic-bezier(.34,1.56,.64,1) .3s both;font-size:80px;position:relative;z-index:2;filter:drop-shadow(0 0 20px #FFD700);}
+.spider-drop{animation:spiderDrop 1s cubic-bezier(.34,1.56,.64,1) .3s both;font-size:80px;position:relative;z-index:2;filter:drop-shadow(0 0 20px #CC0000);}
 
-/* Fio do Sonic */
+/* Fio da aranha */
 .spider-thread{width:2px;height:80px;background:linear-gradient(to bottom,transparent,rgba(204,0,0,.6));margin:0 auto;animation:threadFade 1s ease .3s both;}
 @keyframes threadFade{from{opacity:0;height:0;}to{opacity:1;height:80px;}}
 
 @keyframes titleReveal{from{opacity:0;transform:scale(.6) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
-.intro-title{font-family:'Bebas Neue',cursive;font-size:52px;letter-spacing:4px;color:#fff;text-shadow:0 0 30px #1E88E5,3px 3px 0 #0D47A1;animation:titleReveal .6s cubic-bezier(.34,1.56,.64,1) 1.1s both;text-align:center;line-height:1;}
+.intro-title{font-family:'Bebas Neue',cursive;font-size:52px;letter-spacing:4px;color:#fff;text-shadow:0 0 30px #CC0000,3px 3px 0 #800000;animation:titleReveal .6s cubic-bezier(.34,1.56,.64,1) 1.1s both;text-align:center;line-height:1;}
 .intro-sub{font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:8px;color:#CC0000;animation:titleReveal .6s ease 1.4s both;margin-top:4px;}
 .intro-name{font-size:20px;font-weight:900;color:#FFD700;animation:titleReveal .6s ease 1.7s both;margin-top:12px;}
 
 @keyframes btnPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(204,0,0,.4);}50%{transform:scale(1.03);box-shadow:0 0 0 10px rgba(204,0,0,0);}}
-.intro-btn{background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;border:none;border-radius:50px;padding:16px 40px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;cursor:pointer;margin-top:32px;animation:titleReveal .6s ease 2s both, btnPulse 2s ease 2.6s infinite;letter-spacing:.5px;}
+.intro-btn{background:linear-gradient(135deg,#CC0000,#800000);color:#fff;border:none;border-radius:50px;padding:16px 40px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;cursor:pointer;margin-top:32px;animation:titleReveal .6s ease 2s both, btnPulse 2s ease 2.6s infinite;letter-spacing:.5px;}
 
 /* ── Página de confirmação ── */
 #confirm{display:none;min-height:100vh;position:relative;padding:24px 20px 40px;}
@@ -225,9 +225,9 @@ body{background:#0a0a0a;font-family:'Nunito',sans-serif;color:#fff;overflow-x:hi
 .card:nth-child(2){animation-delay:.15s;}
 .card:nth-child(3){animation-delay:.3s;}
 
-.badge{display:inline-block;background:linear-gradient(135deg,#1565C0,#0D47A1);border-radius:50px;padding:6px 18px;font-family:'Bebas Neue',cursive;font-size:13px;letter-spacing:3px;margin-bottom:16px;}
-h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;margin-bottom:4px;text-shadow:2px 2px 0 #0D47A1;}
-.arthur{color:#FFD700;font-family:'Bebas Neue',cursive;font-size:52px;letter-spacing:3px;color:#CC0000;line-height:1;text-shadow:3px 3px 0 #500000;}
+.badge{display:inline-block;background:linear-gradient(135deg,#CC0000,#800000);border-radius:50px;padding:6px 18px;font-family:'Bebas Neue',cursive;font-size:13px;letter-spacing:3px;margin-bottom:16px;}
+h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;margin-bottom:4px;text-shadow:2px 2px 0 #800000;}
+.arthur{font-family:'Bebas Neue',cursive;font-size:52px;letter-spacing:3px;color:#CC0000;line-height:1;text-shadow:3px 3px 0 #500000;}
 .date-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.3);border-radius:50px;padding:8px 18px;font-weight:700;font-size:13px;color:#FFD700;margin:12px 0;}
 .guest-name{font-size:24px;font-weight:900;margin:16px 0 4px;}
 .guest-sub{font-size:13px;color:rgba(255,255,255,.5);}
@@ -255,7 +255,7 @@ form{flex:1;margin:0;}
 <div id="intro">
   <div class="web-container">
     <svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
-      <!-- Sonic rings --
+      <!-- Raios da teia -->
       <line class="web-line" x1="200" y1="0" x2="0" y2="400"/>
       <line class="web-line" x1="200" y1="0" x2="400" y2="400"/>
       <line class="web-line" x1="200" y1="0" x2="200" y2="800"/>
@@ -272,9 +272,9 @@ form{flex:1;margin:0;}
   </div>
   <div class="particles" id="particles"></div>
   <div class="spider-thread"></div>
-  <div class="spider-drop">🦔</div>
-  <div class="intro-title">SONIC<br/>GOTTA GO FAST</div>
-  <div class="intro-sub">Festa do Arthur ⚡</div>
+  <div class="spider-drop">🕷️</div>
+  <div class="intro-title">HOMEM ARANHA<br/>EM AÇÃO</div>
+  <div class="intro-sub">Festa do Arthur</div>
   <div class="intro-name">Olá, ${guest.nome}! Você foi convidado(a)! 🎉</div>
   <button class="intro-btn" onclick="showConfirm()">Ver meu convite ➜</button>
 </div>
@@ -284,11 +284,11 @@ form{flex:1;margin:0;}
   <div class="bg-web"></div>
   <div class="content">
     <div style="text-align:center;padding:24px 0 20px;">
-      <div style="font-size:56px;filter:drop-shadow(0 0 16px #CC0000)">🦔</div>
+      <div style="font-size:56px;filter:drop-shadow(0 0 16px #CC0000)">🕷️</div>
     </div>
 
     <div class="card" style="text-align:center;margin-bottom:14px;">
-      <div class="badge">⚡ CONVITE ESPECIAL</div>
+      <div class="badge">🎂 CONVITE ESPECIAL</div>
       <h1>Festa de Aniversário</h1>
       <div class="arthur">ARTHUR</div>
       <div class="date-badge">📅 09 de Janeiro de 2027</div>
@@ -302,9 +302,9 @@ form{flex:1;margin:0;}
           <div class="info-value">Arthur</div>
         </div>
         <div class="info-item">
-          <div class="info-icon">🦔</div>
+          <div class="info-icon">🕷️</div>
           <div class="info-label">Tema</div>
-          <div class="info-value">Sonic ⚡</div>
+          <div class="info-value">Homem Aranha</div>
         </div>
         <div class="info-item">
           <div class="info-icon">📅</div>
@@ -332,7 +332,7 @@ form{flex:1;margin:0;}
       </div>
     </div>
 
-    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:20px;">⚡ Festa do Arthur 2027</p>
+    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:20px;">🕸️ Festa do Arthur 2027</p>
   </div>
 </div>
 
@@ -342,7 +342,7 @@ const pc = document.getElementById('particles');
 for(let i=0;i<20;i++){
   const p = document.createElement('div');
   p.className = 'particle';
-  p.style.cssText = 'left:'+Math.random()*100+'%;animation-duration:'+(3+Math.random()*4)+'s;animation-delay:'+Math.random()*3+'s;width:'+(2+Math.random()*4)+'px;height:'+(2+Math.random()*4)+'px;background:'+(Math.random()>.5?'#1E88E5':'#FFD700')+';opacity:'+(0.3+Math.random()*.7)+';';
+  p.style.cssText = 'left:'+Math.random()*100+'%;animation-duration:'+(3+Math.random()*4)+'s;animation-delay:'+Math.random()*3+'s;width:'+(2+Math.random()*4)+'px;height:'+(2+Math.random()*4)+'px;background:'+(Math.random()>.5?'#CC0000':'#FFD700')+';opacity:'+(0.3+Math.random()*.7)+';';
   pc.appendChild(p);
 }
 
@@ -364,11 +364,11 @@ function paginaObrigado(nome, confirmado) {
 <html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Obrigado! - Festa do Arthur</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@700;900&display=swap" rel="stylesheet"/>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:linear-gradient(170deg,#0D47A1,#1565C0 40%,#050A14 80%);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;color:#fff;padding:20px;}.card{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:36px 28px;max-width:400px;width:100%;text-align:center;backdrop-filter:blur(10px);}h1{font-family:'Bebas Neue',cursive;font-size:40px;letter-spacing:2px;margin:16px 0 8px;}</style>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:linear-gradient(170deg,#800000,#CC0000 40%,#0a1628 80%);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;color:#fff;padding:20px;}.card{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:36px 28px;max-width:400px;width:100%;text-align:center;backdrop-filter:blur(10px);}h1{font-family:'Bebas Neue',cursive;font-size:40px;letter-spacing:2px;margin:16px 0 8px;}</style>
 </head><body><div class="card">
   <div style="font-size:72px">${confirmado ? '🎉' : '😢'}</div>
   <h1>${confirmado ? 'Ótimo!' : 'Tudo bem!'}</h1>
-  <p style="font-size:15px;color:rgba(255,255,255,.8);line-height:1.6;">${confirmado ? `<strong>${nome}</strong>, sua presença foi confirmada!<br/>Te esperamos na festa do Arthur! 🦔⚡🎂` : `<strong>${nome}</strong>, sentiremos sua falta.<br/>Obrigado por avisar!`}</p>
+  <p style="font-size:15px;color:rgba(255,255,255,.8);line-height:1.6;">${confirmado ? `<strong>${nome}</strong>, sua presença foi confirmada!<br/>Te esperamos na festa do Arthur! 🕷️🎂` : `<strong>${nome}</strong>, sentiremos sua falta.<br/>Obrigado por avisar!`}</p>
   <p style="margin-top:24px;font-size:12px;color:rgba(255,255,255,.4);">Você já pode fechar esta página.</p>
 </div></body></html>`;
 }
@@ -426,7 +426,7 @@ app.get('/seed-convidados', async (req, res) => {
   h2{color:#22C55E;} li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:14px;}
   a{display:block;margin-top:24px;background:#CC0000;color:#fff;padding:14px;border-radius:12px;text-align:center;text-decoration:none;font-weight:700;}
   </style></head><body>
-  <h2>🦔 Cadastro concluído!</h2>
+  <h2>🕷️ Cadastro concluído!</h2>
   <ul>${results.map(r=>`<li>${r.nome} — ${r.status}</li>`).join('')}</ul>
   <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:16px;">Total: 95 pessoas (74 adultos + 21 crianças)</p>
   <a href="/">Abrir o App</a>
