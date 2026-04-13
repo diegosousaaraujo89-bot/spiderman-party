@@ -209,6 +209,7 @@
       { id:"check", icon:"✅", label:"Tarefas" },
       { id:"budget", icon:"💰", label:"Gastos" },
       { id:"cotacoes", icon:"📋", label:"Cotações" },
+      { id:"bebidas", icon:"🍺", label:"Bebidas" },
     ];
 
     function BottomNav({ tab, setTab }) {
@@ -251,6 +252,7 @@
       const [toast, setToast] = useState(null);
       const [addingCheck, setAddingCheck] = useState(false);
       const [newCheck, setNewCheck] = useState({ item:"", categoria:"Buffet" });
+      const [numPessoas, setNumPessoas] = useState(100);
 
       /* -- Carrega tudo do servidor ao iniciar e a cada 30s -- */
       const loadFromServer = useCallback(async () => {
@@ -863,6 +865,88 @@
                   );
                 })}
                 <button className="hw-btn" style={btnP} onClick={()=>addServico()}>+ Novo Serviço</button>
+              </div>
+            )}
+          </div>
+
+            {tab==="bebidas" && (
+              <div>
+                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:4 }}>🍺 Bebidas</div>
+                <div style={{ fontSize:12, color:C.muted, marginBottom:14 }}>Estimativa para festa de 4h. Ajuste o número de pessoas.</div>
+                <div className="hw-card" style={{ ...cardSt, marginBottom:16, background:`linear-gradient(135deg,${C.redD},#060d1a)`, border:`1px solid ${C.red}33` }}>
+                  <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.yellow, marginBottom:10 }}>NÚMERO DE PESSOAS</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                    <button className="hw-btn" onClick={()=>setNumPessoas(n=>Math.max(10,n-10))} style={{ ...btnSm(C.yellow), padding:"8px 18px", fontSize:20, fontWeight:900 }}>−</button>
+                    <div style={{ flex:1, textAlign:"center" }}>
+                      <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:56, color:C.yellow, lineHeight:1 }}>{numPessoas}</div>
+                      <div style={{ fontSize:11, color:C.muted, fontWeight:700 }}>pessoas</div>
+                    </div>
+                    <button className="hw-btn" onClick={()=>setNumPessoas(n=>n+10)} style={{ ...btnSm(C.yellow), padding:"8px 18px", fontSize:20, fontWeight:900 }}>+</button>
+                  </div>
+                  <div style={{ display:"flex", gap:6, marginTop:12 }}>
+                    {[50,75,100,150,200].map(n=>(
+                      <button key={n} className="hw-btn" onClick={()=>setNumPessoas(n)} style={{ ...btnSm(numPessoas===n?C.yellow:C.muted), flex:1, padding:"6px 2px", textAlign:"center", fontSize:11 }}>{n}</button>
+                    ))}
+                  </div>
+                </div>
+                {(()=>{
+                  const p = numPessoas;
+                  const bebidas = [
+                    { nome:"Água", icon:"💧", color:"#60A5FA", itens:[
+                      { desc:"Garrafas 500ml", qtd:Math.ceil(p*1.5), unidade:"garrafas", obs:"1,5 un/pessoa" },
+                      { desc:"Galão 20L", qtd:Math.ceil(p*0.5/20), unidade:"galões", obs:"alternativa" },
+                    ]},
+                    { nome:"Coca-Cola", icon:"🥤", color:"#EF4444", itens:[
+                      { desc:"Garrafas 2L", qtd:Math.ceil(p*0.3/2), unidade:"garrafas", obs:"300ml/pessoa" },
+                      { desc:"Latas 350ml", qtd:Math.ceil(p*0.3/0.35), unidade:"latas", obs:"alternativa" },
+                    ]},
+                    { nome:"Guaraná", icon:"🟢", color:"#22C55E", itens:[
+                      { desc:"Garrafas 2L", qtd:Math.ceil(p*0.3/2), unidade:"garrafas", obs:"300ml/pessoa" },
+                      { desc:"Latas 350ml", qtd:Math.ceil(p*0.3/0.35), unidade:"latas", obs:"alternativa" },
+                    ]},
+                    { nome:"Fanta", icon:"🟠", color:"#F97316", itens:[
+                      { desc:"Garrafas 2L", qtd:Math.ceil(p*0.25/2), unidade:"garrafas", obs:"250ml/pessoa" },
+                      { desc:"Latas 350ml", qtd:Math.ceil(p*0.25/0.35), unidade:"latas", obs:"alternativa" },
+                    ]},
+                    { nome:"Suco de Laranja", icon:"🍊", color:"#FB923C", itens:[
+                      { desc:"Caixinhas 1L", qtd:Math.ceil(p*0.25), unidade:"caixinhas", obs:"250ml/pessoa" },
+                      { desc:"Pó (pacote 2L)", qtd:Math.ceil(p*0.25/2), unidade:"pacotes", obs:"cada faz 2L" },
+                    ]},
+                    { nome:"Chopp", icon:"🍺", color:"#FCD34D", itens:[
+                      { desc:"Total em litros", qtd:Math.ceil(p*0.6), unidade:"litros", obs:"600ml/pessoa" },
+                      { desc:"Barril 30L", qtd:Math.ceil(p*0.6/30), unidade:"barris", obs:"30L cada" },
+                      { desc:"Barril 50L", qtd:Math.ceil(p*0.6/50), unidade:"barris", obs:"50L cada" },
+                    ]},
+                  ];
+                  return bebidas.map(b=>(
+                    <div key={b.nome} className="hw-card" style={{ ...cardSt, marginBottom:12, borderLeft:`4px solid ${b.color}` }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                        <div style={{ width:38, height:38, borderRadius:12, background:b.color+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{b.icon}</div>
+                        <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:16, letterSpacing:1, color:b.color }}>{b.nome.toUpperCase()}</div>
+                      </div>
+                      {b.itens.map((it,i)=>(
+                        <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderTop:`1px solid ${C.border}` }}>
+                          <div>
+                            <div style={{ fontWeight:700, fontSize:13 }}>{it.desc}</div>
+                            <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{it.obs}</div>
+                          </div>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:34, color:b.color, lineHeight:1 }}>{it.qtd}</div>
+                            <div style={{ fontSize:10, color:C.muted, fontWeight:700 }}>{it.unidade}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ));
+                })()}
+                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#060d1a)`, border:`1px solid ${C.red}44` }}>
+                  <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.yellow, marginBottom:8 }}>💡 DICAS</div>
+                  {["Compre 10–15% a mais para não faltar","Gelo: 1kg por pessoa","Chopp: barril 30L = ~83 canecas de 350ml","Deixe água sempre gelada e acessível","Suco: caixinhas prontas facilitam o serviço"].map((d,i,arr)=>(
+                    <div key={i} style={{ fontSize:12, color:"rgba(255,255,255,.7)", padding:"6px 0", borderBottom:i<arr.length-1?`1px solid rgba(255,255,255,.08)`:"none", display:"flex", gap:8 }}>
+                      <span style={{ color:C.yellow, flexShrink:0 }}>•</span>{d}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
