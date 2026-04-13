@@ -6,7 +6,7 @@
   <title>Festa do Arthur 🦔</title>
 
   <!-- PWA -->
-  <meta name="theme-color" content="#1E88E5" />
+  <meta name="theme-color" content="#0066CC" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,7 +23,7 @@
 
   <style>
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
-    body{background:#0b1120;font-family:'Nunito',sans-serif;color:#F2F2F2;}
+    body{background:#0a0f1e;font-family:'Nunito',sans-serif;color:#F2F2F2;}
     ::-webkit-scrollbar{width:0;height:0;}
     .hw-card{transition:transform .15s ease,box-shadow .15s ease;}
     .hw-card:active{transform:scale(0.985);}
@@ -39,7 +39,7 @@
     .hw-splash{animation:splashOut .6s ease 2.4s both;}
     @keyframes splashOut{to{opacity:0;pointer-events:none;}}
     .hw-car{animation:carRide 2s ease-in-out both;}
-    @keyframes carRide{0%{transform:translateX(-250px) scaleX(1);opacity:0;}65%{transform:translateX(8px) scaleX(1);opacity:1;}80%{transform:translateX(-4px);}100%{transform:translateX(0);opacity:1;}}
+    @keyframes carRide{0%{transform:translateX(-300px) scaleX(1.3);opacity:0;}55%{transform:translateX(6px) scaleX(0.95);opacity:1;}75%{transform:translateX(-3px) scaleX(1);}100%{transform:translateX(0) scaleX(1);opacity:1;}}
     .hw-title-in{animation:titlePop .5s cubic-bezier(.34,1.56,.64,1) .7s both;}
     @keyframes titlePop{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:scale(1);}}
     .hw-progress{transition:width .5s cubic-bezier(.4,0,.2,1);}
@@ -70,7 +70,7 @@
     }
 
     /* -- LOCAL STORAGE fallback para checklist/orcamento/cotacoes -- */
-    const SK = "sonic-festa-2027";
+    const SK = "sonic-movie-festa-2027";
     function loadLocal() {
       try { const r = localStorage.getItem(SK); return r ? JSON.parse(r) : null; } catch { return null; }
     }
@@ -155,10 +155,10 @@
     };
 
     const C = {
-      red:"#1E88E5",redD:"#1565C0",yellow:"#FFD700",black:"#0b1120",dark:"#0f1729",
-      surface:"#141e32",card:"#1c2a42",card2:"#243252",text:"#F2F2F2",muted:"#8aaac8",
-      success:"#22C55E",danger:"#EF4444",blue:"#1E88E5",purple:"#AB47BC",border:"#2a3d5e",
-      spiderBlue:"#1E88E5",spiderRed:"#1565C0",
+      red:"#0066CC",redD:"#004499",yellow:"#FFB800",black:"#0a0f1e",dark:"#0d1424",
+      surface:"#0d1424",card:"#111827",card2:"#1a2535",text:"#F0F4FF",muted:"#5b7fa6",
+      success:"#22C55E",danger:"#E53935",blue:"#00AAFF",purple:"#7C3AED",border:"#1e3050",
+      spiderBlue:"#0066CC",spiderRed:"#E53935",
     };
 
     function EditField({ value, onSave, type="text", style={} }) {
@@ -172,7 +172,7 @@
           <input ref={ref} type={type} value={val}
             onChange={e=>setVal(e.target.value)}
             onKeyDown={e=>{ if(e.key==="Enter")commit(); if(e.key==="Escape")setEditing(false); }}
-            style={{ background:C.card2, border:`1.5px solid ${C.yellow}`, borderRadius:6, padding:"4px 8px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:type==="number"?64:160 }}
+            style={{ background:C.card2, border:`1.5px solid ${C.blue}`, borderRadius:6, padding:"4px 8px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:type==="number"?64:160 }}
           />
           <button onClick={commit} style={{ background:C.success+"22",color:C.success,border:"none",borderRadius:6,padding:"4px 7px",cursor:"pointer",fontSize:13 }}>✓</button>
           <button onClick={()=>setEditing(false)} style={{ background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:13 }}>✕</button>
@@ -189,12 +189,12 @@
     function Splash({ onDone }) {
       useEffect(() => { const t = setTimeout(onDone, 2900); return ()=>clearTimeout(t); }, []);
       return (
-        <div className="hw-splash" style={{ position:"fixed", inset:0, zIndex:999, background:"linear-gradient(135deg,#0b1120 0%,#1565C0 50%,#0b1120 100%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ height:6, background:"repeating-linear-gradient(90deg,#FFD700 0,#FFD700 20px,transparent 20px,transparent 40px)", width:"100%", position:"absolute", top:0 }} />
-          <div style={{ height:6, background:"repeating-linear-gradient(90deg,#FFD700 0,#FFD700 20px,transparent 20px,transparent 40px)", width:"100%", position:"absolute", bottom:0 }} />
-          <div className="hw-car" style={{ fontSize:88, marginBottom:8, filter:"drop-shadow(0 0 18px #FFD700)" }}>🦔</div>
-          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:44, color:"#fff", letterSpacing:3, lineHeight:1, textShadow:"0 0 30px #1E88E5,3px 3px 0 #1565C0", textAlign:"center" }}>SONIC</div>
-          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:"#FFD700", letterSpacing:6, animationDelay:".85s" }}>GOTTA GO FAST</div>
+        <div className="hw-splash" style={{ position:"fixed", inset:0, zIndex:999, background:"linear-gradient(160deg,#000a1f 0%,#001a4d 35%,#0055bb 65%,#000a1f 100%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ height:6, background:"repeating-linear-gradient(90deg,#FFB800 0,#FFB800 22px,transparent 22px,transparent 44px)", width:"100%", position:"absolute", top:0 }} />
+          <div style={{ height:6, background:"repeating-linear-gradient(90deg,#FFB800 0,#FFB800 22px,transparent 22px,transparent 44px)", width:"100%", position:"absolute", bottom:0 }} />
+          <div className="hw-car" style={{ fontSize:96, marginBottom:4, filter:"drop-shadow(0 0 24px #00AAFF) drop-shadow(0 0 48px #0066CC)" }}>🦔</div>
+          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:44, color:"#fff", letterSpacing:3, lineHeight:1, textShadow:"0 0 40px #00AAFF, 0 0 80px #0066CC, 3px 3px 0 #003388", textAlign:"center", fontSize:56 }}>SONIC</div>
+          <div className="hw-title-in" style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:"#FFB800", letterSpacing:8, animationDelay:".85s", textShadow:"0 0 20px #FFB800" }}>GOTTA GO FAST</div>
           <div className="hw-title-in" style={{ marginTop:16, fontSize:13, color:"rgba(255,255,255,.5)", fontWeight:700, animationDelay:"1.1s" }}>Festa do Arthur  09/01/2027</div>
         </div>
       );
@@ -481,11 +481,11 @@
                 </div>
                 <div style={{ fontSize:11, color:"#666", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
                 <div style={{ display:"flex", gap:10, marginBottom:18 }}>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Ola, "+modal.nome+"! Voce esta convidado para a Festa do Arthur - Sonic Gotta Go Fast! Data: 09/01/2027.\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
+                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Ola, "+modal.nome+"! Voce esta convidado para a Festa do Arthur - Sonic: Gotta Go Fast! Data: 09/01/2027.\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
                     style={{ flex:1, background:"rgba(37,211,102,.15)", color:"#25D366", border:"1.5px solid rgba(37,211,102,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                     <span style={{ fontSize:22 }}>💬</span>WhatsApp
                   </button>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Festa do Arthur - Sonic Gotta Go Fast! 09/01/2027. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto com link!"); }}
+                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Festa do Arthur - Sonic: Gotta Go Fast! 09/01/2027. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto com link!"); }}
                     style={{ flex:1, background:"rgba(26,115,232,.15)", color:"#1A73E8", border:"1.5px solid rgba(26,115,232,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                     <span style={{ fontSize:22 }}>📩</span>SMS
                   </button>
@@ -510,7 +510,7 @@
             <div style={{ height:4, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 16px,transparent 16px,transparent 30px)`, marginBottom:10, borderRadius:2 }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:10, letterSpacing:3, color:C.yellow, opacity:.8 }}>🏁 SONIC</span>
-              <span style={{ background:"#FFD700", color:"#0b1120", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
+              <span style={{ background:"#FFB800", color:"#0a0f1e", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
             </div>
             <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}>🦔 SONIC: GOTTA GO FAST</div>
             {loading && <div style={{ fontSize:10, color:C.spiderBlue, fontWeight:700, marginTop:2 }}>🔄 Sincronizando...</div>}
@@ -577,7 +577,7 @@
                     <div style={{ fontSize:11, color:C.muted, marginTop:6 }}>{p.sub}</div>
                   </div>
                 ))}
-                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#060d1a)`, border:`1px solid ${C.red}44` }}>
+                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#000a1f)`, border:`1px solid ${C.red}44` }}>
                   <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:12, letterSpacing:2, color:C.yellow, marginBottom:4 }}>ORÇAMENTO TOTAL</div>
                   <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:40, color:C.yellow, lineHeight:1 }}>R$ {totalOrc.toLocaleString("pt-BR")}</div>
                   <div style={{ display:"flex", gap:20, marginTop:6 }}>
@@ -760,7 +760,7 @@
             {tab==="budget" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>💰 Orçamento</div>
-                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#060d1a)`, border:`1px solid ${C.red}44`, marginBottom:16 }}>
+                <div className="hw-card" style={{ ...cardSt, background:`linear-gradient(135deg,${C.redD},#000a1f)`, border:`1px solid ${C.red}44`, marginBottom:16 }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
                     <div>
                       <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700 }}>Total estimado</div>
