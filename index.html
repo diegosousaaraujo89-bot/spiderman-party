@@ -251,6 +251,7 @@
       const [modal, setModal] = useState(null);
       const [toast, setToast] = useState(null);
       const [numPessoas, setNumPessoas] = useState(100);
+      const [parcelaModal, setParcelaModal] = useState(null);
       const [parcelarModal, setParcelarModal] = useState(null);
       const [addingCheck, setAddingCheck] = useState(false);
       const [newCheck, setNewCheck] = useState({ item:"", categoria:"Buffet" });
@@ -343,6 +344,11 @@
         const updated = {...data, checklist:data.checklist.map(c=>c.id===id?{...c,item:v}:c)};
         persist(updated);
         await apiPut("/api/dados/checklist", updated.checklist);
+      };
+      const editOrcParcela = async (id, fields) => {
+        const updated = {...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,...fields}:o)};
+        persist(updated);
+        await apiPut("/api/dados/orcamento", updated.orcamento);
       };
       const editOrc = async (id,f,v) => {
         const updated = {...data, orcamento:data.orcamento.map(o=>o.id===id?{...o,[f]:v}:o)};
@@ -509,16 +515,84 @@
               </div>
             </div>
           )}
-          {splash && <Splash onDone={()=>setSplash(false)} />}
+          {splash && <Splash onDone={()=>setSplash(false)} />
+
+          {parcelaModal && (
+            <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.88)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={()=>setParcelaModal(null)}>
+              <div className="hw-fade" style={{ background:C.surface, borderRadius:"20px 20px 0 0", padding:24, width:"100%", maxWidth:480, border:`1px solid ${C.border}`, paddingBottom:40 }} onClick={e=>e.stopPropagation()}>
+                <div style={{ width:40, height:4, background:C.border, borderRadius:4, margin:"0 auto 20px" }} />
+                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:4 }}>💳 PARCELAMENTO</div>
+                <div style={{ fontWeight:700, fontSize:15, marginBottom:16 }}>{parcelaModal.item}</div>
+                <div style={{ display:"flex", gap:10, marginBottom:14 }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:6 }}>Valor Total</div>
+                    <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, color:C.yellow }}>R$ {parcelaModal.valor.toLocaleString("pt-BR")}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:10, marginBottom:12 }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:6 }}>Entrada (R$)</div>
+                    <input type="number" defaultValue={parcelaModal.entrada||0} id="inp-entrada"
+                      style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:16, outline:"none", width:"100%" }} />
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:6 }}>Nº de Parcelas</div>
+                    <input type="number" defaultValue={parcelaModal.numParcelas||0} id="inp-parcelas" min="0" max="60"
+                      style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:16, outline:"none", width:"100%" }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:6 }}>Valor da Parcela (R$)</div>
+                  <input type="number" defaultValue={parcelaModal.valorParcela||0} id="inp-vparcela"
+                    style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:16, outline:"none", width:"100%" }} />
+                </div>
+                {(parcelaModal.numParcelas||0) > 0 && (
+                  <div style={{ marginBottom:16 }}>
+                    <div style={{ fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>Parcelas Pagas</div>
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                      {Array.from({length:parcelaModal.numParcelas||0},(_,i)=>(
+                        <button key={i} className="hw-btn" onClick={()=>editOrcParcela(parcelaModal.id,{parcelasPagas:i+1===parcelaModal.parcelasPagas?i:i+1})}
+                          style={{ ...btnSm(i<(parcelaModal.parcelasPagas||0)?C.success:C.muted), padding:"5px 10px", fontSize:11 }}>
+                          {i+1}ª {i<(parcelaModal.parcelasPagas||0)?"✅":""}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                  <button className="hw-btn" onClick={()=>editOrcParcela(parcelaModal.id,{entradaPaga:!parcelaModal.entradaPaga})}
+                    style={{ flex:1, background:(parcelaModal.entradaPaga?C.success:C.muted)+"22", color:parcelaModal.entradaPaga?C.success:C.muted, border:`1px solid ${(parcelaModal.entradaPaga?C.success:C.muted)}44`, borderRadius:12, padding:12, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                    {parcelaModal.entradaPaga?"✅ Entrada paga":"Marcar entrada paga"}
+                  </button>
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button className="hw-btn" onClick={()=>{
+                    const ent = parseFloat(document.getElementById("inp-entrada").value)||0;
+                    const np = parseInt(document.getElementById("inp-parcelas").value)||0;
+                    const vp = parseFloat(document.getElementById("inp-vparcela").value)||0;
+                    editOrcParcela(parcelaModal.id,{entrada:ent,numParcelas:np,valorParcela:vp});
+                    setParcelaModal({...parcelaModal,entrada:ent,numParcelas:np,valorParcela:vp});
+                    showToast("Parcelamento salvo! 💳");
+                  }} style={{ flex:1, background:`linear-gradient(135deg,${C.red},${C.redD})`, color:"#fff", border:"none", borderRadius:12, padding:14, fontWeight:900, fontSize:15, cursor:"pointer" }}>
+                    Salvar
+                  </button>
+                  <button className="hw-btn" onClick={()=>{ editOrcParcela(parcelaModal.id,{entrada:0,numParcelas:0,valorParcela:0,parcelasPagas:0,entradaPaga:false}); setParcelaModal(null); showToast("Parcelamento removido"); }}
+                    style={{ background:C.card2, color:C.muted, border:`1px solid ${C.border}`, borderRadius:12, padding:14, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                    Remover
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}}
 
           {/* HEADER */}
           <div style={{ background:C.surface, padding:"12px 16px 0", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:50 }}>
             <div style={{ height:4, background:`repeating-linear-gradient(90deg,${C.yellow} 0,${C.yellow} 16px,transparent 16px,transparent 30px)`, marginBottom:10, borderRadius:2 }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:10, letterSpacing:3, color:C.yellow, opacity:.8 }}>🏁 SONIC</span>
-              <span style={{ background:"#FFD700", color:"#0b1120", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>09/01/2027</span>
+              <span style={{ background:"#FFD700", color:"#0b1120", fontWeight:900, fontSize:10, padding:"3px 10px", borderRadius:20 }}>10/01/2027 - 12:30 HRS</span>
             </div>
-            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}><span className="sonic-hdr"></span>SONIC: GOTTA GO FAST</div>
+            <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:28, lineHeight:1, color:"#fff", textShadow:`2px 2px 0 ${C.redD}`, letterSpacing:1, marginTop:2 }}><span className="sonic-hdr"></span>SONIC EM AÇÃO</div>
             {loading && <div style={{ fontSize:10, color:C.spiderBlue, fontWeight:700, marginTop:2 }}>🔄 Sincronizando...</div>}
             <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:700, marginBottom:10 }}>Arthur Mosca · 6 Anos · 100 Pessoas ⚡</div>
           </div>
@@ -781,27 +855,83 @@
                     <div className="hw-progress" style={{ height:"100%", width:`${pagoPct}%`, background:`linear-gradient(90deg,${C.success},#4ADE80)`, borderRadius:8 }} />
                   </div>
                   <div style={{ fontSize:11, color:"rgba(255,255,255,.4)" }}>R$ {pago.toLocaleString("pt-BR")} pago ({pagoPct}%)</div>
+                  {(()=>{
+                    const totalEntradas = data.orcamento.filter(o=>o.entradaPaga).reduce((a,o)=>a+(o.entrada||0),0);
+                    const totalParc = data.orcamento.reduce((a,o)=>a+((o.parcelasPagas||0)*(o.valorParcela||0)),0);
+                    const parcelados = data.orcamento.filter(o=>(o.numParcelas||0)>0);
+                    if(!parcelados.length) return null;
+                    return (
+                      <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid rgba(255,255,255,.1)" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:11 }}>
+                          <span style={{ color:"rgba(255,255,255,.5)" }}>💳 Entradas pagas:</span>
+                          <span style={{ color:C.success, fontWeight:700 }}>R$ {totalEntradas.toLocaleString("pt-BR")}</span>
+                        </div>
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginTop:4 }}>
+                          <span style={{ color:"rgba(255,255,255,.5)" }}>📋 Parcelas pagas:</span>
+                          <span style={{ color:C.success, fontWeight:700 }}>R$ {totalParc.toLocaleString("pt-BR")}</span>
+                        </div>
+                        {parcelados.map(o=>(
+                          <div key={o.id} style={{ marginTop:6, background:"rgba(255,255,255,.06)", borderRadius:8, padding:"6px 10px", fontSize:11 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between" }}>
+                              <span style={{ color:"rgba(255,255,255,.6)", fontWeight:700 }}>{o.item}</span>
+                              <span style={{ color:C.yellow }}>{o.parcelasPagas||0}/{o.numParcelas}x</span>
+                            </div>
+                            <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
+                              <span style={{ color:C.muted }}>Entrada: R$ {(o.entrada||0).toLocaleString("pt-BR")} {o.entradaPaga?"✅":""}</span>
+                              <span style={{ color:C.muted }}>Falta: {(o.numParcelas||0)-(o.parcelasPagas||0)}x</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div style={cardSt}>
-                  {data.orcamento.map((o,i)=>(
-                    <div key={o.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 0", borderBottom:i<data.orcamento.length-1?`1px solid ${C.border}`:"none" }}>
-                      <div style={{ width:36, height:36, borderRadius:10, background:o.pago?C.success+"22":C.yellow+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>
-                        {o.pago?"✅":"💵"}
-                      </div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <EditField value={o.item} onSave={v=>editOrc(o.id,"item",v)} style={{ fontWeight:700, fontSize:13, opacity:o.pago?.5:1 }} />
-                        <div style={{ display:"flex", alignItems:"center", gap:3, marginTop:2 }}>
-                          <span style={{ color:C.muted, fontSize:11 }}>R$</span>
-                          <EditField value={o.valor} type="number" onSave={v=>editOrc(o.id,"valor",v)}
-                            style={{ fontFamily:"'Bebas Neue',cursive", fontSize:20, color:o.pago?C.success:C.yellow, lineHeight:1 }} />
+                  {data.orcamento.map((o,i)=>{
+                    const entrada = o.entrada||0;
+                    const numParc = o.numParcelas||0;
+                    const valorParc = o.valorParcela||0;
+                    const totalParcelado = entrada + (numParc * valorParc);
+                    const parcelado = numParc > 0;
+                    const parcPagas = o.parcelasPagas||0;
+                    const totalPago = o.pago ? o.valor : (entrada > 0 && o.entradaPaga ? entrada : 0) + (parcPagas * valorParc);
+                    return (
+                    <div key={o.id} style={{ padding:"14px 0", borderBottom:i<data.orcamento.length-1?`1px solid ${C.border}`:"none" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ width:36, height:36, borderRadius:10, background:o.pago?C.success+"22":parcelado?"rgba(255,215,0,.15)":C.yellow+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>
+                          {o.pago?"✅":parcelado?"📋":"💵"}
                         </div>
-                        {(()=>{ const srv = Object.keys(COT_ORC_MAP).find(k=>COT_ORC_MAP[k]===o.id); if(!srv) return null; const s = data.cotacoes.find(c=>c.servico===srv); if(!s) return null; const escolhido = s.opcoes.find(op=>op.escolhido); const melhor = [...s.opcoes].sort((a,b)=>a.valor-b.valor)[0]; return (<div style={{ fontSize:10, color:escolhido?C.success:C.spiderBlue, marginTop:2, fontWeight:700 }}>{escolhido ? "✓ "+escolhido.fornecedor : "💡 Menor: "+melhor.fornecedor}</div>); })()}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <EditField value={o.item} onSave={v=>editOrc(o.id,"item",v)} style={{ fontWeight:700, fontSize:13, opacity:o.pago?.5:1 }} />
+                          <div style={{ display:"flex", alignItems:"center", gap:3, marginTop:2 }}>
+                            <span style={{ color:C.muted, fontSize:11 }}>R$</span>
+                            <EditField value={o.valor} type="number" onSave={v=>editOrc(o.id,"valor",v)}
+                              style={{ fontFamily:"'Bebas Neue',cursive", fontSize:20, color:o.pago?C.success:C.yellow, lineHeight:1 }} />
+                          </div>
+                          {parcelado && (
+                            <div style={{ marginTop:4, display:"flex", gap:6, flexWrap:"wrap" }}>
+                              <span style={{ background:"rgba(255,215,0,.12)", color:C.yellow, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>
+                                Entrada: R$ {entrada.toLocaleString("pt-BR")} {o.entradaPaga?"✅":""}
+                              </span>
+                              <span style={{ background:"rgba(255,255,255,.06)", color:C.muted, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>
+                                {parcPagas}/{numParc}x R$ {valorParc.toLocaleString("pt-BR")}
+                              </span>
+                            </div>
+                          )}
+                          {(()=>{ const srv = Object.keys(COT_ORC_MAP).find(k=>COT_ORC_MAP[k]===o.id); if(!srv) return null; const s = data.cotacoes.find(cc=>cc.servico===srv); if(!s) return null; const escolhido = s.opcoes.find(op=>op.escolhido); const melhor = [...s.opcoes].sort((a,b)=>a.valor-b.valor)[0]; return (<div style={{ fontSize:10, color:escolhido?C.success:C.spiderBlue, marginTop:2, fontWeight:700 }}>{escolhido ? "✓ "+escolhido.fornecedor : "💡 Menor: "+melhor.fornecedor}</div>); })()}
+                        </div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:4, flexShrink:0 }}>
+                          <button className="hw-btn" onClick={()=>setParcelaModal(o)} style={{ ...btnSm(parcelado?C.yellow:C.muted), padding:"4px 8px", fontSize:10 }}>
+                            {parcelado?"📋 Parcelas":"Parcelar"}
+                          </button>
+                          {!parcelado && <button className="hw-btn" onClick={()=>togglePago(o.id)} style={{ ...btnSm(o.pago?C.success:C.muted), padding:"4px 8px", fontSize:10 }}>
+                            {o.pago?"Pago ✅":"Pagar"}
+                          </button>}
+                        </div>
                       </div>
-                      <button className="hw-btn" onClick={()=>togglePago(o.id)} style={btnSm(o.pago?C.success:C.muted)}>
-                        {o.pago?"Pago ✅":"Pagar"}
-                      </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
