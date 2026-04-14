@@ -231,6 +231,9 @@ form{flex:1;margin:0;}
   <div class="t3">Festa de Aniversário do Arthur</div>
   <div class="t4">📅 10 de Janeiro de 2027 às 12:30h</div>
   <button class="btn-ver" onclick="showConfirm()">Ver meu convite ➜</button>
+  <div style="margin-top:16px;">
+    <button id="music-btn" onclick="toggleMusic()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:50px;padding:8px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🎵 Tocar música</button>
+  </div>
 </div>
 
 <div id="confirm">
@@ -298,33 +301,82 @@ form{flex:1;margin:0;}
 </div>
 
 <script>
-// Sonic Green Hill Zone theme via Web Audio API
-function playSonicTheme() {
+// Sonic Green Hill Zone theme - full melody, looping
+let sonicCtx = null;
+let sonicPlaying = false;
+
+// Green Hill Zone full melody (notes: [frequency, duration])
+const GHZ_NOTES = [
+  // Intro
+  [659,0.12],[0,0.04],[659,0.12],[0,0.04],[659,0.12],[0,0.04],[523,0.12],[659,0.12],[0,0.04],[784,0.25],[0,0.25],[392,0.25],[0,0.25],
+  // Phrase A
+  [523,0.18],[0,0.12],[392,0.18],[0,0.12],[330,0.18],[0,0.08],[440,0.12],[494,0.12],[0,0.04],[466,0.12],[440,0.25],
+  [392,0.18],[659,0.18],[784,0.18],[880,0.18],[698,0.12],[784,0.12],[0,0.04],[659,0.25],[523,0.12],[587,0.12],[494,0.25],
+  // Phrase B
+  [523,0.18],[0,0.12],[392,0.18],[0,0.12],[330,0.18],[0,0.08],[440,0.12],[494,0.12],[0,0.04],[466,0.12],[440,0.25],
+  [392,0.18],[659,0.18],[784,0.18],[880,0.18],[698,0.12],[784,0.12],[0,0.04],[659,0.25],[523,0.12],[587,0.12],[494,0.25],
+  // Bridge
+  [784,0.18],[0,0.08],[740,0.12],[698,0.12],[0,0.04],[622,0.18],[0,0.08],[659,0.12],[0,0.04],[415,0.18],[440,0.18],[523,0.18],[0,0.08],[440,0.12],[523,0.18],[587,0.25],
+  [784,0.18],[0,0.08],[740,0.12],[698,0.12],[0,0.04],[622,0.18],[0,0.08],[659,0.12],[0,0.04],[1047,0.25],[0,0.12],[1047,0.18],[1047,0.25],
+  // Outro/turnaround
+  [784,0.18],[0,0.08],[740,0.12],[698,0.12],[0,0.04],[622,0.18],[0,0.08],[659,0.12],[0,0.04],[415,0.18],[440,0.18],[523,0.18],[0,0.08],[440,0.12],[523,0.18],[587,0.25],
+  [523,0.18],[0,0.12],[392,0.18],[0,0.12],[330,0.18],[0,0.08],[440,0.12],[494,0.12],[0,0.04],[466,0.12],[440,0.25],
+  [392,0.18],[659,0.18],[784,0.18],[880,0.18],[698,0.12],[784,0.12],[0,0.04],[659,0.25],[523,0.12],[587,0.12],[784,0.4],[0,0.2],
+];
+
+function playLoop() {
+  if (!sonicPlaying) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [
-      [659,0.15],[659,0.15],[0,0.05],[659,0.15],[0,0.05],[523,0.15],[659,0.15],[0,0.05],[784,0.3],[0,0.3],[392,0.3],[0,0.3],
-      [523,0.2],[0,0.15],[392,0.2],[0,0.15],[330,0.2],[0,0.1],[440,0.15],[494,0.15],[0,0.05],[466,0.15],[440,0.3],
-      [392,0.2],[659,0.2],[784,0.2],[880,0.2],[698,0.15],[784,0.15],[0,0.05],[659,0.3],[523,0.15],[587,0.15],[494,0.3]
-    ];
-    let t = ctx.currentTime + 0.3;
-    notes.forEach(([freq, dur]) => {
+    sonicCtx = sonicCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const masterGain = sonicCtx.createGain();
+    masterGain.gain.value = 0.06;
+    masterGain.connect(sonicCtx.destination);
+
+    let t = sonicCtx.currentTime + 0.05;
+    const totalDur = GHZ_NOTES.reduce((a,[,d])=>a+d, 0);
+
+    GHZ_NOTES.forEach(([freq, dur]) => {
       if (freq > 0) {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type = 'square';
-        o.frequency.value = freq;
-        g.gain.setValueAtTime(0.08, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.9);
+        const o = sonicCtx.createOscillator();
+        const g = sonicCtx.createGain();
+        // Mix square + triangle for richer sound
+        const o2 = sonicCtx.createOscillator();
+        const g2 = sonicCtx.createGain();
+        o.type = 'square'; o2.type = 'triangle';
+        o.frequency.value = freq; o2.frequency.value = freq;
+        g2.gain.value = 0.4;
+        o.connect(g); o2.connect(g2);
+        g.connect(masterGain); g2.connect(masterGain);
+        g.gain.setValueAtTime(0.6, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
         o.start(t); o.stop(t + dur);
+        o2.start(t); o2.stop(t + dur);
       }
       t += dur;
     });
-  } catch(e) {}
+    // Schedule next loop
+    setTimeout(()=>{ if(sonicPlaying) playLoop(); }, totalDur * 1000 - 100);
+  } catch(e) { console.log('Audio:', e); }
 }
+
+function startMusic() {
+  if (sonicPlaying) return;
+  sonicPlaying = true;
+  playLoop();
+  document.getElementById('music-btn').textContent = '🔇 Pausar música';
+}
+function stopMusic() {
+  sonicPlaying = false;
+  if (sonicCtx) { sonicCtx.close(); sonicCtx = null; }
+  document.getElementById('music-btn').textContent = '🎵 Tocar música';
+}
+function toggleMusic() {
+  sonicPlaying ? stopMusic() : startMusic();
+}
+
+// Auto-start on first interaction
 document.addEventListener('click', function onFirst() {
-  playSonicTheme();
+  startMusic();
   document.removeEventListener('click', onFirst);
 }, { once: true });
 
