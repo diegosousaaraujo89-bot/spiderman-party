@@ -444,30 +444,37 @@ app.get('/relatorio', async (req, res) => {
     const totalAdultos = confirmados.reduce((a,r)=>a+r.adultos,0);
     const totalCriancas = confirmados.reduce((a,r)=>a+r.criancas,0);
     const totalGeral = confirmados.reduce((a,r)=>a+r.adultos+r.criancas,0);
+    const totalAdultosGeral = rows.reduce((a,r)=>a+r.adultos,0);
+    const totalCriancasGeral = rows.reduce((a,r)=>a+r.criancas,0);
+    const totalGeralTodos = rows.reduce((a,r)=>a+r.adultos+r.criancas,0);
 
     const renderGrupo = (lista, titulo, cor) => {
       if (!lista.length) return '';
+      const totalA = lista.reduce((a,r)=>a+r.adultos,0);
+      const totalC = lista.reduce((a,r)=>a+r.criancas,0);
       return `
         <div class="grupo">
-          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos</div>
+          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos &nbsp;|&nbsp; 👤 ${totalA} adultos &nbsp; 👶 ${totalC} crianças &nbsp; Total: ${totalA+totalC}</div>
           <table>
             <thead><tr>
-              <th>Nome / Responsável</th>
-              <th>Quem vai comparecer</th>
-              <th>Adultos</th>
-              <th>Crianças</th>
-              <th>Idade(s)</th>
-              <th>Total</th>
+              <th style="width:18%">Responsável</th>
+              <th style="width:35%">👥 Quem vai comparecer</th>
+              <th style="width:8%;text-align:center">Adultos</th>
+              <th style="width:8%;text-align:center">Crianças</th>
+              <th style="width:15%">🎂 Idade(s)</th>
+              <th style="width:8%;text-align:center">Total</th>
+              <th style="width:8%;text-align:center">Status</th>
             </tr></thead>
             <tbody>
               ${lista.map(r => `
-                <tr>
-                  <td><strong>${r.nome}</strong><br/><small style="color:#666">${r.grupo}</small></td>
-                  <td style="color:#333">${r.nomes||'—'}</td>
+                <tr style="background:${Number(r.confirmado)===1?'#f0fff4':r.confirmado===null?'#fffbf0':'#fff5f5'}">
+                  <td><strong>${r.nome}</strong><br/><small style="color:#999">${r.grupo}</small></td>
+                  <td style="color:#333;word-break:break-word">${r.nomes||'<span style="color:#bbb">—</span>'}</td>
                   <td style="text-align:center">${r.adultos}</td>
                   <td style="text-align:center">${r.criancas}</td>
-                  <td style="text-align:center;color:#e67e22">${r.idadeCrianca||'—'}</td>
+                  <td style="color:#e67e22;word-break:break-word">${r.idadeCrianca||'—'}</td>
                   <td style="text-align:center;font-weight:700">${r.adultos+r.criancas}</td>
+                  <td style="text-align:center">${Number(r.confirmado)===1?'✅':r.confirmado===null?'⏳':'❌'}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -514,19 +521,18 @@ app.get('/relatorio', async (req, res) => {
   </div>
 
   <div class="resumo">
-    <div class="card"><div class="num" style="color:#0066CC">${totalGeral}</div><div class="label">Total Confirmados</div></div>
-    <div class="card"><div class="num" style="color:#333">${totalAdultos}</div><div class="label">Adultos</div></div>
-    <div class="card"><div class="num" style="color:#e67e22">${totalCriancas}</div><div class="label">Crianças</div></div>
-    <div class="card"><div class="num" style="color:#888">${pendentes.length}</div><div class="label">Aguardando Resp.</div></div>
+    <div class="card"><div class="num" style="color:#0066CC">${totalGeralTodos}</div><div class="label">Total Geral</div><div style="font-size:11px;color:#aaa;margin-top:4px">${totalAdultosGeral} adultos · ${totalCriancasGeral} crianças</div></div>
+    <div class="card"><div class="num" style="color:#22c55e">${totalGeral}</div><div class="label">✅ Confirmados</div><div style="font-size:11px;color:#aaa;margin-top:4px">${totalAdultos} adultos · ${totalCriancas} crianças</div></div>
+    <div class="card"><div class="num" style="color:#f59e0b">${pendentes.length}</div><div class="label">⏳ Aguardando</div></div>
+    <div class="card"><div class="num" style="color:#ef4444">${recusaram.length}</div><div class="label">❌ Recusaram</div></div>
   </div>
 
   ${pendentes.length ? `<div class="pendente-warn">⚠️ <strong>${pendentes.length} grupos</strong> ainda não confirmaram presença. Total estimado se todos confirmarem: <strong>${rows.reduce((a,r)=>a+r.adultos+r.criancas,0)} pessoas</strong>.</div>` : ''}
 
-  ${renderGrupo(confirmados.filter(r=>r.grupo==='Família'), '👨‍👩‍👧‍👦 Família — Confirmados', '#0066CC')}
-  ${renderGrupo(confirmados.filter(r=>r.grupo==='Amigos'), '🤝 Amigos — Confirmados', '#7C3AED')}
-  ${renderGrupo(confirmados.filter(r=>r.grupo==='Escola'), '🎒 Escola — Confirmados', '#059669')}
-  ${renderGrupo(confirmados.filter(r=>!['Família','Amigos','Escola'].includes(r.grupo)), '📋 Outros — Confirmados', '#64748b')}
-  ${pendentes.length ? renderGrupo(pendentes, '⏳ Aguardando Confirmação', '#f59e0b') : ''}
+  ${renderGrupo(rows.filter(r=>r.grupo==='Família'), '👨‍👩‍👧‍👦 Família', '#0066CC')}
+  ${renderGrupo(rows.filter(r=>r.grupo==='Amigos'), '🤝 Amigos', '#7C3AED')}
+  ${renderGrupo(rows.filter(r=>r.grupo==='Escola'), '🎒 Escola', '#059669')}
+  ${renderGrupo(rows.filter(r=>!['Família','Amigos','Escola'].includes(r.grupo)), '📋 Outros', '#64748b')}
 
   <div class="footer">
     Festa do Arthur · Sonic em Ação · 10/01/2027 · festaarthur.onrender.com

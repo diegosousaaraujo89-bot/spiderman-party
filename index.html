@@ -378,6 +378,10 @@
         persist({...data, convidados:data.convidados.map(g=>g.id===id?{...g,[f]:v}:g)});
         await apiPut("/api/convidados/"+id, {[f]:v});
       };
+      const saveGuestFields = async (id, fields) => {
+        persist({...data, convidados:data.convidados.map(g=>g.id===id?{...g,...fields}:g)});
+        await apiPut("/api/convidados/"+id, fields);
+      };
       const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3500); };
       // Mapeamento cotacoes -> id do item no orcamento
       const COT_ORC_MAP = { "Buffet":1, "Bolo":2, "Decoracao":4, "DJ Animacao":5, "Fotografo":6 };
@@ -512,8 +516,8 @@
                   placeholder="Ex: 6 anos"
                   style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", marginBottom:10 }}
                 />
-                <button className="hw-btn" onClick={async ()=>{ await Promise.all([editGuest(modal.id,"nomes",modal.nomes||""), editGuest(modal.id,"idadeCrianca",modal.idadeCrianca||"")]); showToast("Salvo! ✅"); }}
-                  style={{ ...btnSm(C.success), width:"100%", padding:"10px", textAlign:"center", marginBottom:14, fontSize:13 }}>
+                <button className="hw-btn" onClick={async ()=>{ await saveGuestFields(modal.id, {nomes:modal.nomes||"", idadeCrianca:modal.idadeCrianca||""}); showToast("Salvo! ✅"); }}
+                  style={{ background:C.success, color:"#fff", border:"none", borderRadius:12, padding:"12px", fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:14, cursor:"pointer", width:"100%", marginBottom:14 }}>
                   💾 Salvar lista de convidados
                 </button>
                 <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
