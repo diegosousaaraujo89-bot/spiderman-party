@@ -433,4 +433,109 @@ app.get('/seed-convidados', async (req, res) => {
   res.send(html);
 });
 
+// ── Relatório para o Buffet ─────────────────────────────────
+app.get('/relatorio', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM convidados ORDER BY grupo, nome');
+    const confirmados = rows.filter(r => Number(r.confirmado) === 1);
+    const pendentes = rows.filter(r => r.confirmado === null);
+    const recusaram = rows.filter(r => Number(r.confirmado) === 0);
+
+    const totalAdultos = confirmados.reduce((a,r)=>a+r.adultos,0);
+    const totalCriancas = confirmados.reduce((a,r)=>a+r.criancas,0);
+    const totalGeral = confirmados.reduce((a,r)=>a+r.adultos+r.criancas,0);
+
+    const renderGrupo = (lista, titulo, cor) => {
+      if (!lista.length) return '';
+      return `
+        <div class="grupo">
+          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos</div>
+          <table>
+            <thead><tr>
+              <th>Nome / Responsável</th>
+              <th>Quem vai comparecer</th>
+              <th>Adultos</th>
+              <th>Crianças</th>
+              <th>Idade(s)</th>
+              <th>Total</th>
+            </tr></thead>
+            <tbody>
+              ${lista.map(r => `
+                <tr>
+                  <td><strong>${r.nome}</strong><br/><small style="color:#666">${r.grupo}</small></td>
+                  <td style="color:#333">${r.nomes||'—'}</td>
+                  <td style="text-align:center">${r.adultos}</td>
+                  <td style="text-align:center">${r.criancas}</td>
+                  <td style="text-align:center;color:#e67e22">${r.idadeCrianca||'—'}</td>
+                  <td style="text-align:center;font-weight:700">${r.adultos+r.criancas}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    };
+
+    res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Relatório Buffet — Festa do Arthur</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#222;padding:20px;}
+  .header{background:linear-gradient(135deg,#0066CC,#004499);color:#fff;border-radius:16px;padding:28px 24px;margin-bottom:24px;text-align:center;}
+  .header h1{font-size:28px;letter-spacing:1px;margin-bottom:4px;}
+  .header p{opacity:.8;font-size:14px;}
+  .resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+  .card{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .card .num{font-size:36px;font-weight:700;line-height:1;}
+  .card .label{font-size:12px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+  .grupo{margin-bottom:24px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .grupo-title{color:#fff;padding:12px 20px;font-weight:700;font-size:15px;letter-spacing:.5px;}
+  table{width:100%;border-collapse:collapse;}
+  th{background:#f9f9f9;padding:10px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888;border-bottom:1px solid #eee;}
+  td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#fafafa;}
+  .pendente-warn{background:#fff8e1;border:1px solid #ffc107;border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:13px;color:#7a5c00;}
+  .footer{text-align:center;font-size:12px;color:#aaa;margin-top:24px;padding-top:16px;border-top:1px solid #eee;}
+  .btn-print{display:inline-block;background:#0066CC;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;margin-bottom:20px;cursor:pointer;border:none;font-size:15px;}
+  @media print{.btn-print,.no-print{display:none!important;}body{background:#fff;padding:0;}  .grupo,.card{box-shadow:none;}}
+</style>
+</head>
+<body>
+  <div class="no-print" style="text-align:center;margin-bottom:16px;">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+  <div class="header">
+    <h1>🎮 Festa do Arthur — Sonic em Ação</h1>
+    <p>📅 10 de Janeiro de 2027 às 12:30h &nbsp;|&nbsp; 📍 R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba</p>
+    <p style="margin-top:6px;font-size:13px;opacity:.7">Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</p>
+  </div>
+
+  <div class="resumo">
+    <div class="card"><div class="num" style="color:#0066CC">${totalGeral}</div><div class="label">Total Confirmados</div></div>
+    <div class="card"><div class="num" style="color:#333">${totalAdultos}</div><div class="label">Adultos</div></div>
+    <div class="card"><div class="num" style="color:#e67e22">${totalCriancas}</div><div class="label">Crianças</div></div>
+    <div class="card"><div class="num" style="color:#888">${pendentes.length}</div><div class="label">Aguardando Resp.</div></div>
+  </div>
+
+  ${pendentes.length ? `<div class="pendente-warn">⚠️ <strong>${pendentes.length} grupos</strong> ainda não confirmaram presença. Total estimado se todos confirmarem: <strong>${rows.reduce((a,r)=>a+r.adultos+r.criancas,0)} pessoas</strong>.</div>` : ''}
+
+  ${renderGrupo(confirmados.filter(r=>r.grupo==='Família'), '👨‍👩‍👧‍👦 Família — Confirmados', '#0066CC')}
+  ${renderGrupo(confirmados.filter(r=>r.grupo==='Amigos'), '🤝 Amigos — Confirmados', '#7C3AED')}
+  ${renderGrupo(confirmados.filter(r=>r.grupo==='Escola'), '🎒 Escola — Confirmados', '#059669')}
+  ${renderGrupo(confirmados.filter(r=>!['Família','Amigos','Escola'].includes(r.grupo)), '📋 Outros — Confirmados', '#64748b')}
+  ${pendentes.length ? renderGrupo(pendentes, '⏳ Aguardando Confirmação', '#f59e0b') : ''}
+
+  <div class="footer">
+    Festa do Arthur · Sonic em Ação · 10/01/2027 · festaarthur.onrender.com
+  </div>
+</body>
+</html>`);
+  } catch(e) {
+    res.status(500).send('Erro ao gerar relatório: '+e.message);
+  }
+});
+
 app.listen(PORT, () => console.log(`Festa do Arthur rodando na porta ${PORT}`));
