@@ -279,8 +279,7 @@ form{flex:1;margin:0;}
       <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 16px;margin:10px 0;text-align:left;">
         <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">👥 Convidados</div>
         <div style="font-size:14px;font-weight:700;color:#fff;line-height:1.6;">${guest.nomes}</div>
-        ${guest.idadeCrianca ? `<div style="margin-top:6px;font-size:12px;color:#FB923C;font-weight:700;">🎂 ${guest.idadeCrianca}</div>` : ''}
-      </div>` : '${guest.idadeCrianca ? `<div style="background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);border-radius:12px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:#FB923C;font-weight:700;">🎂 Criança(s): ${guest.idadeCrianca}</div>` : ""}'}
+      </div>` : ''}
       <div style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;margin-top:4px;">
         Venho aqui te fazer um convite super especial! 🎉<br/>
         Será um dia cheio de alegria, diversão e momentos inesquecíveis,<br/>
@@ -301,85 +300,30 @@ form{flex:1;margin:0;}
 </div>
 
 <script>
-// Sonic Green Hill Zone theme - full melody, looping
-let sonicCtx = null;
-let sonicPlaying = false;
-
-// Green Hill Zone full melody (notes: [frequency, duration])
-const GHZ_NOTES = [
-  // Intro
-  [659,0.12],[0,0.04],[659,0.12],[0,0.04],[659,0.12],[0,0.04],[523,0.12],[659,0.12],[0,0.04],[784,0.25],[0,0.25],[392,0.25],[0,0.25],
-  // Phrase A
-  [523,0.18],[0,0.12],[392,0.18],[0,0.12],[330,0.18],[0,0.08],[440,0.12],[494,0.12],[0,0.04],[466,0.12],[440,0.25],
-  [392,0.18],[659,0.18],[784,0.18],[880,0.18],[698,0.12],[784,0.12],[0,0.04],[659,0.25],[523,0.12],[587,0.12],[494,0.25],
-  // Phrase B
-  [523,0.18],[0,0.12],[392,0.18],[0,0.12],[330,0.18],[0,0.08],[440,0.12],[494,0.12],[0,0.04],[466,0.12],[440,0.25],
-  [392,0.18],[659,0.18],[784,0.18],[880,0.18],[698,0.12],[784,0.12],[0,0.04],[659,0.25],[523,0.12],[587,0.12],[494,0.25],
-  // Bridge
-  [784,0.18],[0,0.08],[740,0.12],[698,0.12],[0,0.04],[622,0.18],[0,0.08],[659,0.12],[0,0.04],[415,0.18],[440,0.18],[523,0.18],[0,0.08],[440,0.12],[523,0.18],[587,0.25],
-  [784,0.18],[0,0.08],[740,0.12],[698,0.12],[0,0.04],[622,0.18],[0,0.08],[659,0.12],[0,0.04],[1047,0.25],[0,0.12],[1047,0.18],[1047,0.25],
-  // Outro/turnaround
-  [784,0.18],[0,0.08],[740,0.12],[698,0.12],[0,0.04],[622,0.18],[0,0.08],[659,0.12],[0,0.04],[415,0.18],[440,0.18],[523,0.18],[0,0.08],[440,0.12],[523,0.18],[587,0.25],
-  [523,0.18],[0,0.12],[392,0.18],[0,0.12],[330,0.18],[0,0.08],[440,0.12],[494,0.12],[0,0.04],[466,0.12],[440,0.25],
-  [392,0.18],[659,0.18],[784,0.18],[880,0.18],[698,0.12],[784,0.12],[0,0.04],[659,0.25],[523,0.12],[587,0.12],[784,0.4],[0,0.2],
-];
-
-function playLoop() {
-  if (!sonicPlaying) return;
-  try {
-    sonicCtx = sonicCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const masterGain = sonicCtx.createGain();
-    masterGain.gain.value = 0.06;
-    masterGain.connect(sonicCtx.destination);
-
-    let t = sonicCtx.currentTime + 0.05;
-    const totalDur = GHZ_NOTES.reduce((a,[,d])=>a+d, 0);
-
-    GHZ_NOTES.forEach(([freq, dur]) => {
-      if (freq > 0) {
-        const o = sonicCtx.createOscillator();
-        const g = sonicCtx.createGain();
-        // Mix square + triangle for richer sound
-        const o2 = sonicCtx.createOscillator();
-        const g2 = sonicCtx.createGain();
-        o.type = 'square'; o2.type = 'triangle';
-        o.frequency.value = freq; o2.frequency.value = freq;
-        g2.gain.value = 0.4;
-        o.connect(g); o2.connect(g2);
-        g.connect(masterGain); g2.connect(masterGain);
-        g.gain.setValueAtTime(0.6, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
-        o.start(t); o.stop(t + dur);
-        o2.start(t); o2.stop(t + dur);
-      }
-      t += dur;
-    });
-    // Schedule next loop
-    setTimeout(()=>{ if(sonicPlaying) playLoop(); }, totalDur * 1000 - 100);
-  } catch(e) { console.log('Audio:', e); }
-}
-
-function startMusic() {
-  if (sonicPlaying) return;
-  sonicPlaying = true;
-  playLoop();
-  document.getElementById('music-btn').textContent = '🔇 Pausar música';
-}
-function stopMusic() {
-  sonicPlaying = false;
-  if (sonicCtx) { sonicCtx.close(); sonicCtx = null; }
-  document.getElementById('music-btn').textContent = '🎵 Tocar música';
+// Sonic music via YouTube iframe (Green Hill Zone - Sonic 1)
+function loadMusic() {
+  if (document.getElementById('yt-player')) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.5);width:0;height:0;opacity:0;';
+  div.innerHTML = '<iframe id="yt-player" width="0" height="0" src="https://www.youtube.com/embed/jKSCtUMSWbg?autoplay=1&loop=1&playlist=jKSCtUMSWbg&controls=0&modestbranding=1" frameborder="0" allow="autoplay;encrypted-media" allowfullscreen></iframe>';
+  document.body.appendChild(div);
 }
 function toggleMusic() {
-  sonicPlaying ? stopMusic() : startMusic();
+  const btn = document.getElementById('music-btn');
+  const player = document.getElementById('yt-player');
+  if (!player) {
+    loadMusic();
+    btn.textContent = '🔇 Pausar música';
+  } else {
+    player.parentElement.remove();
+    btn.textContent = '🎵 Tocar música';
+  }
 }
-
-// Auto-start on first interaction
+// Auto-start on first tap
 document.addEventListener('click', function onFirst() {
-  startMusic();
+  loadMusic();
   document.removeEventListener('click', onFirst);
 }, { once: true });
-
 const pc = document.getElementById('particles');
 for(let i=0;i<20;i++){
   const p=document.createElement('div');
