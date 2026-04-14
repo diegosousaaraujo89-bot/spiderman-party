@@ -300,28 +300,55 @@ form{flex:1;margin:0;}
 </div>
 
 <script>
-// Sonic music via YouTube iframe (Green Hill Zone - Sonic 1)
-function loadMusic() {
-  if (document.getElementById('yt-player')) return;
-  const div = document.createElement('div');
-  div.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.5);width:0;height:0;opacity:0;';
-  div.innerHTML = '<iframe id="yt-player" width="0" height="0" src="https://www.youtube.com/embed/jKSCtUMSWbg?autoplay=1&loop=1&playlist=jKSCtUMSWbg&controls=0&modestbranding=1" frameborder="0" allow="autoplay;encrypted-media" allowfullscreen></iframe>';
-  document.body.appendChild(div);
+// Sonic music - HTML5 Audio com fallback
+const MUSIC_URLS = [
+  'https://archive.org/download/SonictheHedgehogMusicGreenHillZone/Green%20Hill%20Zone.mp3',
+  'https://downloads.khinsider.com/game-soundtracks/album/sonic-the-hedgehog-1991-genesis/01%20Green%20Hill%20Zone.mp3'
+];
+let audio = null;
+let musicOn = false;
+
+function initAudio() {
+  if (audio) return;
+  audio = new Audio();
+  audio.loop = true;
+  audio.volume = 0.5;
+  // Try URLs in order
+  let urlIndex = 0;
+  function tryNext() {
+    if (urlIndex >= MUSIC_URLS.length) return;
+    audio.src = MUSIC_URLS[urlIndex++];
+    audio.load();
+  }
+  audio.addEventListener('error', () => tryNext());
+  tryNext();
 }
+
+function startMusic() {
+  initAudio();
+  audio.play().then(() => {
+    musicOn = true;
+    const btn = document.getElementById('music-btn');
+    if (btn) btn.textContent = '🔇 Pausar música';
+  }).catch(() => {
+    // autoplay blocked - user needs to tap button
+  });
+}
+
 function toggleMusic() {
   const btn = document.getElementById('music-btn');
-  const player = document.getElementById('yt-player');
-  if (!player) {
-    loadMusic();
-    btn.textContent = '🔇 Pausar música';
+  if (!musicOn) {
+    startMusic();
   } else {
-    player.parentElement.remove();
-    btn.textContent = '🎵 Tocar música';
+    audio.pause();
+    musicOn = false;
+    if (btn) btn.textContent = '🎵 Tocar música';
   }
 }
-// Auto-start on first tap
+
+// Try autoplay on first interaction
 document.addEventListener('click', function onFirst() {
-  loadMusic();
+  startMusic();
   document.removeEventListener('click', onFirst);
 }, { once: true });
 const pc = document.getElementById('particles');
