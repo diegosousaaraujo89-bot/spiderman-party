@@ -498,7 +498,21 @@
                   </div>
                   {modal.conviteEnviado && <span style={{ background:"rgba(26,115,232,.2)", color:"#1A73E8", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>Enviado</span>}
                 </div>
-                <div style={{ fontSize:11, color:"#666", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
+                <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>👥 QUEM VAI COMPARECER</div>
+                <textarea
+                  defaultValue={modal.nomes||""}
+                  onBlur={e=>{ if(e.target.value!==modal.nomes){ editGuest(modal.id,"nomes",e.target.value); setModal({...modal,nomes:e.target.value}); } }}
+                  placeholder="Ex: Yasmin, Arthur (6 anos) e Dayanne"
+                  style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", resize:"none", height:72, marginBottom:10 }}
+                />
+                <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>🎂 IDADE DAS CRIANÇAS</div>
+                <input
+                  defaultValue={modal.idadeCrianca||""}
+                  onBlur={e=>{ if(e.target.value!==modal.idadeCrianca){ editGuest(modal.id,"idadeCrianca",e.target.value); setModal({...modal,idadeCrianca:e.target.value}); } }}
+                  placeholder="Ex: 6 anos"
+                  style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", marginBottom:14 }}
+                />
+                <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
                 <div style={{ display:"flex", gap:10, marginBottom:18 }}>
                   <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("🎮 Sonic em Ação! 🦔\n\nOiii, "+modal.nome+", tudo bem? 😊\n\nVenho aqui te fazer um convite super especial!\nSerá um dia cheio de alegria, diversão e momentos inesquecíveis, e a sua presença vai deixar tudo ainda mais completo.\n\nEspero você para comemorarmos juntos! 🎉✨\n\n📅 10/01/2027 às 12:30h\n📍 R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba\n🏊 Piscina liberada — traga roupa de banho!\n\n👇 Confirme sua presença:\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
                     style={{ flex:1, background:"rgba(37,211,102,.15)", color:"#25D366", border:"1.5px solid rgba(37,211,102,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
