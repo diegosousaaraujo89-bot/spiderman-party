@@ -301,27 +301,14 @@ form{flex:1;margin:0;}
 
 <script>
 // Sonic music - HTML5 Audio com fallback
-const MUSIC_URLS = [
-  'https://archive.org/download/SonictheHedgehogMusicGreenHillZone/Green%20Hill%20Zone.mp3',
-  'https://downloads.khinsider.com/game-soundtracks/album/sonic-the-hedgehog-1991-genesis/01%20Green%20Hill%20Zone.mp3'
-];
 let audio = null;
 let musicOn = false;
 
 function initAudio() {
   if (audio) return;
-  audio = new Audio();
+  audio = new Audio('https://jetta.vgmtreasurechest.com/soundtracks/sonic-1-revisited/joswegvj/01%20Green%20Hill%20Zone%20Act%201.mp3');
   audio.loop = true;
   audio.volume = 0.5;
-  // Try URLs in order
-  let urlIndex = 0;
-  function tryNext() {
-    if (urlIndex >= MUSIC_URLS.length) return;
-    audio.src = MUSIC_URLS[urlIndex++];
-    audio.load();
-  }
-  audio.addEventListener('error', () => tryNext());
-  tryNext();
 }
 
 function startMusic() {
@@ -330,9 +317,7 @@ function startMusic() {
     musicOn = true;
     const btn = document.getElementById('music-btn');
     if (btn) btn.textContent = '🔇 Pausar música';
-  }).catch(() => {
-    // autoplay blocked - user needs to tap button
-  });
+  }).catch(() => {});
 }
 
 function toggleMusic() {
@@ -346,7 +331,7 @@ function toggleMusic() {
   }
 }
 
-// Try autoplay on first interaction
+// Autoplay na primeira interação
 document.addEventListener('click', function onFirst() {
   startMusic();
   document.removeEventListener('click', onFirst);
