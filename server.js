@@ -13,6 +13,7 @@ const pool = new Pool({
 });
 
 async function initDB() {
+  // Create tables
   await pool.query(`
     CREATE TABLE IF NOT EXISTS convidados (
       id SERIAL PRIMARY KEY,
@@ -23,8 +24,6 @@ async function initDB() {
       criancas INTEGER DEFAULT 0,
       telefone TEXT DEFAULT '',
       "conviteEnviado" INTEGER DEFAULT 0,
-      "idadeCrianca" TEXT DEFAULT '',
-      "nomes" TEXT DEFAULT '',
       token TEXT UNIQUE
     );
     CREATE TABLE IF NOT EXISTS dados (
@@ -32,6 +31,14 @@ async function initDB() {
       valor TEXT NOT NULL
     );
   `);
+  // Add new columns if they don't exist yet (migration)
+  const migrations = [
+    `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "idadeCrianca" TEXT DEFAULT ''`,
+    `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "nomes" TEXT DEFAULT ''`,
+  ];
+  for (const sql of migrations) {
+    await pool.query(sql).catch(()=>{});
+  }
   console.log('Banco pronto!');
 }
 initDB().catch(err => console.error('Erro ao iniciar banco:', err));
