@@ -245,7 +245,7 @@
       const [data, setData] = useState(() => loadLocal() || DD);
       const [loading, setLoading] = useState(true);
       const [addGuest, setAddGuest] = useState(false);
-      const [newGuest, setNewGuest] = useState({ nome:"", grupo:"Família", adultos:2, criancas:1 });
+      const [newGuest, setNewGuest] = useState({ nome:"", grupo:"Família", adultos:2, criancas:1, telefone:"", idadeCrianca:"", nomes:"" });
       const [filterGroup, setFilterGroup] = useState("Todos");
       const [searchQ, setSearchQ] = useState("");
       const [modal, setModal] = useState(null);
@@ -463,7 +463,7 @@
         const created = await apiPost("/api/convidados", {
           nome:newGuest.nome.trim(), grupo:newGuest.grupo,
           adultos:+newGuest.adultos, criancas:+newGuest.criancas,
-          telefone:newGuest.telefone||""
+          telefone:newGuest.telefone||"", idadeCrianca:newGuest.idadeCrianca||"", nomes:newGuest.nomes||""
         });
         if (created) {
           persist({...data, convidados:[...data.convidados, created]});
@@ -746,6 +746,8 @@
                               {" "}👶 <EditField value={g.criancas} type="number" onSave={v=>editGuest(g.id,"criancas",v)} style={{ color:C.muted, fontSize:10 }} />
                             </span>
                             {g.telefone && <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone} onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>}
+                          {g.criancas>0 && g.idadeCrianca && <span style={{ background:"rgba(251,146,60,.15)", color:"#FB923C", borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>🎂 {g.idadeCrianca}</span>}
+                          {g.nomes && <div style={{ fontSize:10, color:C.muted, marginTop:3, fontStyle:"italic" }}>👥 <EditField value={g.nomes} onSave={v=>editGuest(g.id,"nomes",v)} style={{ color:C.muted, fontSize:10 }} /></div>}
                           </div>
                         </div>
                         <div style={{ display:"flex", gap:4, flexShrink:0 }}>
@@ -768,6 +770,8 @@
                         <option>Família</option><option>Escola</option><option>Amigos</option>
                       </select>
                       <input style={{ ...inpSt, marginBottom:8 }} placeholder="📱 Telefone" value={newGuest.telefone||""} onChange={e=>setNewGuest({...newGuest,telefone:e.target.value})} />
+                      <input style={{ ...inpSt, marginBottom:8 }} placeholder="🎂 Idade da(s) criança(s) — ex: 5 e 8 anos" value={newGuest.idadeCrianca||""} onChange={e=>setNewGuest({...newGuest,idadeCrianca:e.target.value})} />
+                      <textarea style={{ ...inpSt, marginBottom:8, resize:"none", height:72 }} placeholder="👥 Nomes dos convidados — ex: Yasmin, Arthur (6 anos) e Dayanne" value={newGuest.nomes||""} onChange={e=>setNewGuest({...newGuest,nomes:e.target.value})} />
                       <div style={{ display:"flex", gap:8, marginBottom:12 }}>
                         {["adultos","criancas"].map(f=>(
                           <div key={f} style={{ flex:1 }}>

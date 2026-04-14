@@ -23,6 +23,8 @@ async function initDB() {
       criancas INTEGER DEFAULT 0,
       telefone TEXT DEFAULT '',
       "conviteEnviado" INTEGER DEFAULT 0,
+      "idadeCrianca" TEXT DEFAULT '',
+      "nomes" TEXT DEFAULT '',
       token TEXT UNIQUE
     );
     CREATE TABLE IF NOT EXISTS dados (
@@ -47,6 +49,8 @@ function rowToGuest(row) {
     criancas: row.criancas,
     telefone: row.telefone || '',
     conviteEnviado: Number(row.conviteEnviado) === 1,
+    idadeCrianca: row.idadeCrianca || '',
+    nomes: row.nomes || '',
     token: row.token,
   };
 }
@@ -73,12 +77,12 @@ app.get('/api/convidados', async (req, res) => {
 
 app.post('/api/convidados', async (req, res) => {
   try {
-    const { nome, grupo = 'Amigos', adultos = 1, criancas = 0, telefone = '' } = req.body;
+    const { nome, grupo = 'Amigos', adultos = 1, criancas = 0, telefone = '', idadeCrianca = '', nomes = '' } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome obrigatorio' });
     const token = gerarToken();
     const { rows } = await pool.query(
-      'INSERT INTO convidados (nome, grupo, adultos, criancas, telefone, token) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [nome, grupo, adultos, criancas, telefone, token]
+      'INSERT INTO convidados (nome, grupo, adultos, criancas, telefone, "idadeCrianca", "nomes", token) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+      [nome, grupo, adultos, criancas, telefone, idadeCrianca||'', nomes||'', token]
     );
     res.json(rowToGuest(rows[0]));
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -87,7 +91,7 @@ app.post('/api/convidados', async (req, res) => {
 app.put('/api/convidados/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const allowed = ['nome','grupo','adultos','criancas','telefone','confirmado','conviteEnviado'];
+    const allowed = ['nome','grupo','adultos','criancas','telefone','confirmado','conviteEnviado','idadeCrianca','nomes'];
     const updates = []; const values = []; let i = 1;
     allowed.forEach(f => {
       if (f in req.body) {
@@ -252,14 +256,21 @@ form{flex:1;margin:0;}
           <div style="font-size:11px;color:#1E88E5;margin-top:2px;font-weight:700">📲 Toque para abrir no Maps</div>
         </div>
       </a>
-      <div style="display:flex;align-items:center;gap:10px;background:rgba(100,200,255,.1);border:1px solid rgba(100,200,255,.3);border-radius:14px;padding:12px 16px;margin-bottom:14px;">
-        <div style="font-size:24px;flex-shrink:0">🏊</div>
-        <div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">Piscina Liberada!</div>
-          <div style="font-size:13px;font-weight:700;color:#fff">Traga roupa de banho — venha mergulhar! 💦</div>
+      <div style="background:linear-gradient(135deg,#0066CC,#00AAFF);border-radius:16px;padding:18px 16px;margin-bottom:14px;text-align:center;box-shadow:0 4px 20px rgba(0,102,204,.4);">
+        <div style="font-size:36px;margin-bottom:6px">🏊‍♂️💦</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:4px;">PISCINA LIBERADA!</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.9);font-weight:700;">Traga sua roupa de banho e aproveite! 🌊</div>
+        <div style="margin-top:8px;background:rgba(255,255,255,.2);border-radius:10px;padding:8px 12px;font-size:13px;color:#fff;">
+          💡 <strong>Não esqueça:</strong> protetor solar, toalha e muita energia! ☀️
         </div>
       </div>
       <div class="guest-name">Olá, ${guest.nome}! 😊</div>
+      ${guest.nomes ? `
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 16px;margin:10px 0;text-align:left;">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">👥 Convidados</div>
+        <div style="font-size:14px;font-weight:700;color:#fff;line-height:1.6;">${guest.nomes}</div>
+        ${guest.idadeCrianca ? `<div style="margin-top:6px;font-size:12px;color:#FB923C;font-weight:700;">🎂 ${guest.idadeCrianca}</div>` : ''}
+      </div>` : '${guest.idadeCrianca ? `<div style="background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);border-radius:12px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:#FB923C;font-weight:700;">🎂 Criança(s): ${guest.idadeCrianca}</div>` : ""}'}
       <div style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;margin-top:4px;">
         Venho aqui te fazer um convite super especial! 🎉<br/>
         Será um dia cheio de alegria, diversão e momentos inesquecíveis,<br/>
@@ -280,6 +291,36 @@ form{flex:1;margin:0;}
 </div>
 
 <script>
+// Sonic Green Hill Zone theme via Web Audio API
+function playSonicTheme() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [
+      [659,0.15],[659,0.15],[0,0.05],[659,0.15],[0,0.05],[523,0.15],[659,0.15],[0,0.05],[784,0.3],[0,0.3],[392,0.3],[0,0.3],
+      [523,0.2],[0,0.15],[392,0.2],[0,0.15],[330,0.2],[0,0.1],[440,0.15],[494,0.15],[0,0.05],[466,0.15],[440,0.3],
+      [392,0.2],[659,0.2],[784,0.2],[880,0.2],[698,0.15],[784,0.15],[0,0.05],[659,0.3],[523,0.15],[587,0.15],[494,0.3]
+    ];
+    let t = ctx.currentTime + 0.3;
+    notes.forEach(([freq, dur]) => {
+      if (freq > 0) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'square';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.08, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.9);
+        o.start(t); o.stop(t + dur);
+      }
+      t += dur;
+    });
+  } catch(e) {}
+}
+document.addEventListener('click', function onFirst() {
+  playSonicTheme();
+  document.removeEventListener('click', onFirst);
+}, { once: true });
+
 const pc = document.getElementById('particles');
 for(let i=0;i<20;i++){
   const p=document.createElement('div');
