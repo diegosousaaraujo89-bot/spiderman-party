@@ -314,7 +314,14 @@
       const totalGeral = totalAdultosTodos + totalCriancasTodos;
       const checkDone = data.checklist.filter(c=>c.done).length;
       const totalOrc = data.orcamento.reduce((a,o)=>a+o.valor,0);
-      const pago = data.orcamento.filter(o=>o.pago).reduce((a,o)=>a+o.valor,0);
+      // Pago = itens quitados + entradas pagas + parcelas pagas
+      const pago = data.orcamento.reduce((a,o)=>{
+        if(o.pago) return a+o.valor;
+        let parcial = 0;
+        if(o.entradaPaga) parcial += (o.entrada||0);
+        parcial += (o.parcelasPagas||0)*(o.valorParcela||0);
+        return a+parcial;
+      },0);
       const falta = totalOrc - pago;
       const checkPct = Math.round((checkDone/data.checklist.length)*100);
       const pagoPct = totalOrc>0?Math.round((pago/totalOrc)*100):0;
