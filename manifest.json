@@ -1,0 +1,8 @@
+{
+  "name": "Festa do Arthur - Sonic em Ação",
+  "short_name": "Festa Arthur",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1628",
+  "theme_color": "#1E88E5"
+}
