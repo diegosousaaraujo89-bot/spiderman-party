@@ -166,7 +166,7 @@
       spiderBlue:"#1E88E5",spiderRed:"#1565C0",
     };
 
-    function EditField({ value, onSave, type="text", style={} }) {
+    function EditField({ value, onSave, type="text", style={}, placeholder="" }) {
       const [editing, setEditing] = useState(false);
       const [val, setVal] = useState(value);
       const ref = useRef();
@@ -174,7 +174,7 @@
       const commit = () => { onSave(type==="number"?parseFloat(val)||0:val); setEditing(false); };
       if (editing) return (
         <span style={{ display:"inline-flex", alignItems:"center", gap:4 }}>
-          <input ref={ref} type={type} value={val}
+          <input ref={ref} type={type} value={val} placeholder={placeholder}
             onChange={e=>setVal(e.target.value)}
             onKeyDown={e=>{ if(e.key==="Enter")commit(); if(e.key==="Escape")setEditing(false); }}
             style={{ background:C.card2, border:`1.5px solid ${C.yellow}`, borderRadius:6, padding:"4px 8px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:type==="number"?64:160 }}
@@ -183,10 +183,14 @@
           <button onClick={()=>setEditing(false)} style={{ background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:13 }}>✕</button>
         </span>
       );
+      const isEmpty = value === "" || value === null || value === undefined;
       return (
-        <span onClick={()=>{ setVal(value); setEditing(true); }}
+        <span onClick={()=>{ setVal(value||""); setEditing(true); }}
           style={{ display:"inline-flex", alignItems:"center", gap:5, cursor:"text", ...style }}>
-          {value}<span style={{ fontSize:10, opacity:.35 }}>✏️</span>
+          {isEmpty
+            ? <span style={{ opacity:.5, fontStyle:"italic" }}>{placeholder||"—"}</span>
+            : value}
+          <span style={{ fontSize:10, opacity:.35 }}>✏️</span>
         </span>
       );
     }
@@ -770,7 +774,7 @@
                               👤 <EditField value={g.adultos} type="number" onSave={v=>editGuest(g.id,"adultos",v)} style={{ color:C.muted, fontSize:10 }} />
                               {" "}👶 <EditField value={g.criancas} type="number" onSave={v=>editGuest(g.id,"criancas",v)} style={{ color:C.muted, fontSize:10 }} />
                             </span>
-                            {g.telefone && <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone} onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>}
+                            <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone||""} placeholder="+ telefone" onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>
                           {g.criancas>0 && g.idadeCrianca && <span style={{ background:"rgba(251,146,60,.15)", color:"#FB923C", borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>🎂 {g.idadeCrianca}</span>}
                           {g.nomes && <div style={{ fontSize:10, color:C.muted, marginTop:3, fontStyle:"italic" }}>👥 <EditField value={g.nomes} onSave={v=>editGuest(g.id,"nomes",v)} style={{ color:C.muted, fontSize:10 }} /></div>}
                           </div>
