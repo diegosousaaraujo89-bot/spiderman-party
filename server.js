@@ -276,33 +276,33 @@ body{background:#0a0f1e;font-family:'Nunito',sans-serif;color:#fff;overflow-x:hi
 @keyframes sonicRun{0%{transform:translateX(-400px);opacity:0;}60%{transform:translateX(8px);opacity:1;}80%{transform:translateX(-4px);}100%{transform:translateX(0);opacity:1;}}
 .sonic-char{animation:sonicRun 1s cubic-bezier(.34,1.56,.64,1) .2s both;width:100%;max-width:420px;padding:0 16px;}
 @keyframes popIn{from{opacity:0;transform:scale(.6);}to{opacity:1;transform:scale(1);}}
-.t1{font-family:'Bebas Neue',cursive;font-size:56px;color:#fff;letter-spacing:4px;text-shadow:0 0 40px #29B6F6,3px 3px 0 #003388;animation:popIn .6s cubic-bezier(.34,1.56,.64,1) .9s both;text-align:center;line-height:1;}
-.t2{font-family:'Bebas Neue',cursive;font-size:24px;color:#FFD700;letter-spacing:8px;text-shadow:0 0 20px #FFD700;animation:popIn .5s ease 1.2s both;margin-top:4px;}
-.t3{font-size:14px;color:rgba(255,255,255,.5);font-weight:700;animation:popIn .5s ease 1.5s both;margin-top:12px;}
-.t4{font-size:18px;font-weight:900;color:#FFD700;animation:popIn .5s ease 1.8s both;margin-top:8px;}
+.t1{font-family:'Bebas Neue',cursive;font-size:44px;color:#fff;letter-spacing:3px;text-shadow:0 0 32px #29B6F6,3px 3px 0 #003388;animation:popIn .6s cubic-bezier(.34,1.56,.64,1) .9s both;text-align:center;line-height:1;}
+.t2{font-family:'Bebas Neue',cursive;font-size:20px;color:#FFD700;letter-spacing:6px;text-shadow:0 0 16px #FFD700;animation:popIn .5s ease 1.2s both;margin-top:4px;}
+.t3{font-size:13px;color:rgba(255,255,255,.5);font-weight:700;animation:popIn .5s ease 1.5s both;margin-top:10px;}
+.t4{font-size:15px;font-weight:900;color:#FFD700;animation:popIn .5s ease 1.8s both;margin-top:6px;text-align:center;padding:0 16px;}
 @keyframes btnPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,102,204,.5);}50%{transform:scale(1.03);box-shadow:0 0 0 10px rgba(0,102,204,0);}}
-.btn-ver{background:linear-gradient(135deg,#0066CC,#004499);color:#fff;border:none;border-radius:50px;padding:16px 44px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;cursor:pointer;margin-top:28px;animation:popIn .5s ease 2.1s both,btnPulse 2s ease 2.7s infinite;}
-#confirm{display:none;min-height:100vh;background:linear-gradient(170deg,#0a0f1e 0%,#0d1f4a 50%,#0a0f1e 100%);padding:20px 20px 40px;}
-.confirm-inner{max-width:420px;margin:0 auto;}
+.btn-ver{background:linear-gradient(135deg,#0066CC,#004499);color:#fff;border:none;border-radius:50px;padding:13px 32px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;cursor:pointer;margin-top:22px;animation:popIn .5s ease 2.1s both,btnPulse 2s ease 2.7s infinite;}
+#confirm{display:none;min-height:100vh;background:linear-gradient(170deg,#0a0f1e 0%,#0d1f4a 50%,#0a0f1e 100%);padding:14px 14px 32px;}
+.confirm-inner{max-width:400px;margin:0 auto;}
 @keyframes cardIn{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
-.card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;margin-bottom:14px;backdrop-filter:blur(12px);animation:cardIn .5s ease both;}
+.card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px 16px;margin-bottom:11px;backdrop-filter:blur(12px);animation:cardIn .5s ease both;}
 .card:nth-child(2){animation-delay:.1s;}.card:nth-child(3){animation-delay:.2s;}
-.badge-top{display:inline-block;background:linear-gradient(135deg,#0066CC,#004499);border-radius:50px;padding:6px 20px;font-family:'Bebas Neue',cursive;font-size:13px;letter-spacing:3px;margin-bottom:14px;}
-.main-title{font-family:'Bebas Neue',cursive;font-size:42px;letter-spacing:2px;line-height:1;margin-bottom:4px;}
-.arthur{font-family:'Bebas Neue',cursive;font-size:58px;letter-spacing:3px;color:#FFD700;text-shadow:0 0 20px #FFD700;line-height:1;}
-.date-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.3);border-radius:50px;padding:8px 18px;font-weight:700;font-size:13px;color:#FFD700;margin:12px 0;}
-.guest-name{font-size:22px;font-weight:900;color:#fff;margin:14px 0 4px;}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
-.grid-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 10px;text-align:center;}
-.gi-icon{font-size:22px;margin-bottom:6px;}
-.gi-label{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
-.gi-val{font-size:14px;font-weight:900;margin-top:3px;}
-.confirm-q{font-family:'Bebas Neue',cursive;font-size:13px;letter-spacing:3px;color:rgba(255,255,255,.4);margin-bottom:14px;text-align:center;}
-.btns{display:flex;gap:12px;}
-.btn-sim{flex:1;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:16px;padding:18px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(34,197,94,.3);}
-.btn-nao{flex:1;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:18px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;cursor:pointer;}
+.badge-top{display:inline-block;background:linear-gradient(135deg,#0066CC,#004499);border-radius:50px;padding:5px 16px;font-family:'Bebas Neue',cursive;font-size:11px;letter-spacing:2px;margin-bottom:10px;}
+.main-title{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:2px;line-height:1;margin-bottom:2px;}
+.arthur{font-family:'Bebas Neue',cursive;font-size:46px;letter-spacing:3px;color:#FFD700;text-shadow:0 0 16px #FFD700;line-height:1;}
+.date-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.3);border-radius:50px;padding:6px 14px;font-weight:700;font-size:12px;color:#FFD700;margin:10px 0 0;}
+.guest-name{font-size:18px;font-weight:900;color:#fff;margin:12px 0 4px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+.grid-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 8px;text-align:center;}
+.gi-icon{font-size:18px;margin-bottom:4px;}
+.gi-label{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.gi-val{font-size:12px;font-weight:900;margin-top:2px;}
+.confirm-q{font-family:'Bebas Neue',cursive;font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:10px;text-align:center;}
+.btns{display:flex;gap:10px;}
+.btn-sim{flex:1;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:14px;padding:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.3);}
+.btn-nao{flex:1;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;cursor:pointer;}
 form{margin:0;}
-.already{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:14px;padding:14px;margin-bottom:16px;font-size:13px;color:#FFD700;text-align:center;}
+.already{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:#FFD700;text-align:center;}
 </style>
 </head>
 <body>
@@ -335,24 +335,24 @@ form{margin:0;}
         <div class="grid-item"><div class="gi-icon">📅</div><div class="gi-label">Data</div><div class="gi-val">10/01/2027</div></div>
         <div class="grid-item"><div class="gi-icon">⏰</div><div class="gi-label">Horário</div><div class="gi-val">12:30h</div></div>
       </div>
-      <a href="https://www.google.com/maps/search/?api=1&query=R.+Jos%C3%A9+Escodro+Sobrinho+61+Residencial+Vale+do+Sol+Indaiatuba+SP" target="_blank" style="display:flex;align-items:center;gap:10px;background:rgba(26,115,232,.15);border:1px solid rgba(26,115,232,.4);border-radius:14px;padding:12px 16px;margin:14px 0;text-decoration:none;color:#fff;">
-        <div style="font-size:24px;flex-shrink:0">📍</div>
+      <a href="https://www.google.com/maps/search/?api=1&query=R.+Jos%C3%A9+Escodro+Sobrinho+61+Residencial+Vale+do+Sol+Indaiatuba+SP" target="_blank" style="display:flex;align-items:center;gap:9px;background:rgba(26,115,232,.15);border:1px solid rgba(26,115,232,.4);border-radius:12px;padding:10px 12px;margin:10px 0;text-decoration:none;color:#fff;">
+        <div style="font-size:20px;flex-shrink:0">📍</div>
         <div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">Local da Festa</div>
-          <div style="font-size:13px;font-weight:700">R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba - SP</div>
-          <div style="font-size:11px;color:#1E88E5;margin-top:2px;font-weight:700">📲 Toque para abrir no Maps</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">Local da Festa</div>
+          <div style="font-size:12px;font-weight:700;line-height:1.35">R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba - SP</div>
+          <div style="font-size:10px;color:#1E88E5;margin-top:2px;font-weight:700">📲 Toque para abrir no Maps</div>
         </div>
       </a>
-      <div style="background:linear-gradient(135deg,#0066CC,#00AAFF);border-radius:16px;padding:18px 16px;margin-bottom:14px;text-align:center;box-shadow:0 4px 20px rgba(0,102,204,.4);">
-        <div style="font-size:36px;margin-bottom:6px">🏊‍♂️💦</div>
-        <div style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:4px;">PISCINA LIBERADA!</div>
-        <div style="font-size:14px;color:rgba(255,255,255,.9);font-weight:700;">Traga sua roupa de banho e aproveite! 🌊</div>
-        <div style="margin-top:8px;background:rgba(255,255,255,.2);border-radius:10px;padding:8px 12px;font-size:13px;color:#fff;">
+      <div style="background:linear-gradient(135deg,#0066CC,#00AAFF);border-radius:14px;padding:14px 12px;margin-bottom:10px;text-align:center;box-shadow:0 3px 14px rgba(0,102,204,.35);">
+        <div style="font-size:28px;margin-bottom:4px">🏊‍♂️💦</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:#fff;margin-bottom:3px;">PISCINA LIBERADA!</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.9);font-weight:700;">Traga sua roupa de banho e aproveite! 🌊</div>
+        <div style="margin-top:6px;background:rgba(255,255,255,.2);border-radius:8px;padding:6px 10px;font-size:11px;color:#fff;">
           💡 <strong>Não esqueça:</strong> protetor solar, toalha e muita energia! ☀️
         </div>
       </div>
       <div class="guest-name">Olá, ${guest.nome}! 😊</div>
-      <div style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;margin-top:4px;">
+      <div style="color:rgba(255,255,255,.75);font-size:12px;line-height:1.55;margin-top:2px;">
         Venho aqui te fazer um convite super especial! 🎉<br/>
         Será um dia cheio de alegria, diversão e momentos inesquecíveis,<br/>
         e a sua presença vai deixar tudo ainda mais completo. ✨<br/>
@@ -361,20 +361,20 @@ form{margin:0;}
     </div>
 
     <div class="card" style="text-align:center;">
-      <div style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:3px;color:#FFD700;margin-bottom:4px;">👗 DRESS CODE</div>
-      <div style="font-size:14px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:16px;">Venha com a nossa paleta de cores</div>
-      <div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin-top:6px;">
+      <div style="font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:2px;color:#FFD700;margin-bottom:3px;">👗 DRESS CODE</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:12px;">Venha com a nossa paleta de cores</div>
+      <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
         <div style="text-align:center;">
-          <div style="width:64px;height:64px;border-radius:12px;background:#6B8FB5;box-shadow:0 4px 14px rgba(107,143,181,.4);border:2px solid rgba(255,255,255,.15);"></div>
-          <div style="margin-top:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);">azul/jeans</div>
+          <div style="width:48px;height:48px;border-radius:10px;background:#6B8FB5;box-shadow:0 3px 10px rgba(107,143,181,.4);border:2px solid rgba(255,255,255,.15);"></div>
+          <div style="margin-top:6px;font-size:11px;font-weight:700;color:rgba(255,255,255,.75);">azul/jeans</div>
         </div>
         <div style="text-align:center;">
-          <div style="width:64px;height:64px;border-radius:12px;background:#D4A67C;box-shadow:0 4px 14px rgba(212,166,124,.4);border:2px solid rgba(255,255,255,.15);"></div>
-          <div style="margin-top:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);">bege</div>
+          <div style="width:48px;height:48px;border-radius:10px;background:#D4A67C;box-shadow:0 3px 10px rgba(212,166,124,.4);border:2px solid rgba(255,255,255,.15);"></div>
+          <div style="margin-top:6px;font-size:11px;font-weight:700;color:rgba(255,255,255,.75);">bege</div>
         </div>
         <div style="text-align:center;">
-          <div style="width:64px;height:64px;border-radius:12px;background:#FFFFFF;box-shadow:0 4px 14px rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.35);"></div>
-          <div style="margin-top:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);">branco</div>
+          <div style="width:48px;height:48px;border-radius:10px;background:#FFFFFF;box-shadow:0 3px 10px rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.35);"></div>
+          <div style="margin-top:6px;font-size:11px;font-weight:700;color:rgba(255,255,255,.75);">branco</div>
         </div>
       </div>
     </div>
@@ -386,10 +386,10 @@ form{margin:0;}
         const jaConfirmadas = parsePessoasConfirmadas(guest.pessoasConfirmadas);
         if (!nomesArr.length) return '';
         return `
-        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;margin-bottom:16px;text-align:left;">
-          <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">👥 Quem vai comparecer?</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px;line-height:1.5;">Desmarque quem não vai. Deixe marcado quem vai comparecer.</div>
-          <div id="pessoas-lista" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:14px;text-align:left;">
+          <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Quem vai comparecer?</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:10px;line-height:1.4;">Desmarque quem não vai. Deixe marcado quem vai comparecer.</div>
+          <div id="pessoas-lista" style="display:flex;flex-direction:column;gap:6px;">
             ${nomesArr.map((n, i) => {
               // Se ainda não respondeu: todos marcados. Se já respondeu: manter escolha anterior.
               const marcado = guest.confirmado === null
@@ -397,10 +397,10 @@ form{margin:0;}
                 : jaConfirmadas.includes(n);
               const safe = String(n).replace(/"/g,'&quot;');
               return `
-                <label style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;cursor:pointer;user-select:none;">
+                <label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;cursor:pointer;user-select:none;">
                   <input type="checkbox" name="pessoas" value="${safe}" ${marcado?'checked':''}
-                    style="width:20px;height:20px;accent-color:#22C55E;cursor:pointer;flex-shrink:0;" form="rsvp-form"/>
-                  <span style="font-size:14px;font-weight:700;color:#fff;">${n}</span>
+                    style="width:18px;height:18px;accent-color:#22C55E;cursor:pointer;flex-shrink:0;" form="rsvp-form"/>
+                  <span style="font-size:13px;font-weight:700;color:#fff;">${n}</span>
                 </label>`;
             }).join('')}
           </div>
@@ -408,7 +408,7 @@ form{margin:0;}
       })()}
 
       <div class="confirm-q">VOCÊ VAI COMPARECER?</div>
-      <div style="text-align:center;margin:-6px 0 14px;font-size:12px;color:#FFD700;font-weight:700;">
+      <div style="text-align:center;margin:-4px 0 10px;font-size:11px;color:#FFD700;font-weight:700;">
         📅 Confirme sua presença até <strong>${dataLimiteFmt}</strong>
       </div>
       <form id="rsvp-form" method="POST">
@@ -419,7 +419,7 @@ form{margin:0;}
         </div>
       </form>
     </div>
-    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:16px;">⚡ Sonic em Ação — Festa do Arthur 2027</p>
+    <p style="text-align:center;font-size:10px;color:rgba(255,255,255,.2);margin-top:12px;">⚡ Sonic em Ação — Festa do Arthur 2027</p>
   </div>
 </div>
 
