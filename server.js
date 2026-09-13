@@ -96,6 +96,13 @@ function foiAposPrazo(dataConfirmacao) {
   return new Date(dataConfirmacao) > limite;
 }
 
+// true se HOJE já passou da data limite (usado pra bloquear novas edições)
+async function prazoEncerrado() {
+  const dataLimite = await getDataLimite();
+  const limite = new Date(dataLimite + 'T23:59:59');
+  return new Date() > limite;
+}
+
 function rowToGuest(row) {
   return {
     id: row.id,
@@ -116,7 +123,9 @@ function rowToGuest(row) {
 }
 
 // ── Middleware ───────────────────────────────────────────────
-app.use(express.json());
+// strict:false permite que primitivos JSON (strings, números, booleans)
+// venham no body — sem isso, apiPut(path, "2027-01-05") não persiste.
+app.use(express.json({ strict: false }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 app.use((req, res, next) => {
@@ -216,6 +225,12 @@ app.get('/confirmar/:token', async (req, res) => {
 
 app.post('/confirmar/:token', async (req, res) => {
   try {
+    // Trava dura: depois do prazo, ninguém confirma/altera pelo link público
+    if (await prazoEncerrado()) {
+      const dataLimite = await getDataLimite();
+      const dataFmt = new Date(dataLimite + 'T00:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+      return res.status(403).send(paginaErro(`Prazo de confirmação encerrado (${dataFmt}). Entre em contato com o anfitrião para qualquer ajuste.`));
+    }
     const { resposta } = req.body;
     const { rows } = await pool.query('SELECT * FROM convidados WHERE token = $1', [req.params.token]);
     if (!rows.length) return res.status(404).send(paginaErro('Token inválido'));
@@ -253,8 +268,11 @@ app.post('/confirmar/:token', async (req, res) => {
 async function paginaConfirmacao(guest) {
   const dataLimite = await getDataLimite();
   const dataLimiteFmt = new Date(dataLimite + 'T00:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  const encerrado = await prazoEncerrado();
+  const jaConfirmadas = parsePessoasConfirmadas(guest.pessoasConfirmadas);
+  const nomesArr = parseNomes(guest.nomes);
   const jaRespondeu = guest.confirmado !== null
-    ? `<div class="already">${Number(guest.confirmado)===1 ? '✅ Você já confirmou presença!' : '❌ Você já informou que não vai comparecer.'}<br/>Deseja alterar sua resposta?</div>`
+    ? `<div class="already">${Number(guest.confirmado)===1 ? '✅ Você já confirmou presença!' : '❌ Você já informou que não vai comparecer.'}${encerrado ? '' : '<br/>Deseja alterar sua resposta?'}</div>`
     : '';
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -380,21 +398,45 @@ form{margin:0;}
     </div>
 
     <div class="card">
-      ${jaRespondeu}
-      ${(() => {
-        const nomesArr = parseNomes(guest.nomes);
-        const jaConfirmadas = parsePessoasConfirmadas(guest.pessoasConfirmadas);
-        if (!nomesArr.length) return '';
-        return `
+      ${encerrado ? `
+        <!-- ==== MODO SOMENTE LEITURA (prazo encerrado) ==== -->
+        <div style="text-align:center;padding:4px 0 2px;">
+          <div style="font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:2px;color:#FFD700;margin-bottom:6px;">
+            🔒 PRAZO ENCERRADO
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.55;margin-bottom:14px;">
+            O prazo de confirmação (${dataLimiteFmt}) já passou.<br/>
+            ${guest.confirmado === null
+              ? 'Se você ainda precisa confirmar, fale diretamente com o anfitrião.'
+              : 'Não é mais possível alterar sua resposta pelo link. Se precisar mudar, fale diretamente com o anfitrião.'}
+          </div>
+        </div>
+        ${guest.confirmado === null ? '' : `
+        <div style="background:${Number(guest.confirmado)===1?'rgba(34,197,94,.10)':'rgba(239,68,68,.10)'};border:1px solid ${Number(guest.confirmado)===1?'rgba(34,197,94,.35)':'rgba(239,68,68,.35)'};border-radius:12px;padding:14px 16px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">
+            Sua resposta
+          </div>
+          <div style="font-size:14px;font-weight:900;color:${Number(guest.confirmado)===1?'#4ADE80':'#F87171'};margin-bottom:${Number(guest.confirmado)===1 && jaConfirmadas.length ? '10' : '0'}px;">
+            ${Number(guest.confirmado)===1 ? '✅ Confirmado' : '❌ Não vai comparecer'}
+          </div>
+          ${Number(guest.confirmado)===1 && jaConfirmadas.length ? `
+          <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">
+            Quem vai (${jaConfirmadas.length})
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            ${jaConfirmadas.map(n=>`<div style="font-size:13px;font-weight:700;color:#fff;">• ${n}</div>`).join('')}
+          </div>` : ''}
+        </div>`}
+      ` : `
+        <!-- ==== MODO EDITÁVEL (dentro do prazo) ==== -->
+        ${jaRespondeu}
+        ${nomesArr.length ? `
         <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:14px;text-align:left;">
           <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Quem vai comparecer?</div>
           <div style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:10px;line-height:1.4;">Desmarque quem não vai. Deixe marcado quem vai comparecer.</div>
           <div id="pessoas-lista" style="display:flex;flex-direction:column;gap:6px;">
-            ${nomesArr.map((n, i) => {
-              // Se ainda não respondeu: todos marcados. Se já respondeu: manter escolha anterior.
-              const marcado = guest.confirmado === null
-                ? true
-                : jaConfirmadas.includes(n);
+            ${nomesArr.map(n => {
+              const marcado = guest.confirmado === null ? true : jaConfirmadas.includes(n);
               const safe = String(n).replace(/"/g,'&quot;');
               return `
                 <label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;cursor:pointer;user-select:none;">
@@ -404,20 +446,20 @@ form{margin:0;}
                 </label>`;
             }).join('')}
           </div>
-        </div>`;
-      })()}
+        </div>` : ''}
 
-      <div class="confirm-q">VOCÊ VAI COMPARECER?</div>
-      <div style="text-align:center;margin:-4px 0 10px;font-size:11px;color:#FFD700;font-weight:700;">
-        📅 Confirme sua presença até <strong>${dataLimiteFmt}</strong>
-      </div>
-      <form id="rsvp-form" method="POST">
-        <div class="btns">
-          <button type="submit" name="resposta" value="sim" class="btn-sim">🎉 Sim, vou!</button>
-          <button type="submit" name="resposta" value="nao" class="btn-nao"
-            onclick="document.querySelectorAll('#pessoas-lista input').forEach(c=>c.checked=false)">😢 Não vou</button>
+        <div class="confirm-q">VOCÊ VAI COMPARECER?</div>
+        <div style="text-align:center;margin:-4px 0 10px;font-size:11px;color:#FFD700;font-weight:700;">
+          📅 Confirme sua presença até <strong>${dataLimiteFmt}</strong>
         </div>
-      </form>
+        <form id="rsvp-form" method="POST">
+          <div class="btns">
+            <button type="submit" name="resposta" value="sim" class="btn-sim">🎉 Sim, vou!</button>
+            <button type="submit" name="resposta" value="nao" class="btn-nao"
+              onclick="document.querySelectorAll('#pessoas-lista input').forEach(c=>c.checked=false)">😢 Não vou</button>
+          </div>
+        </form>
+      `}
     </div>
     <p style="text-align:center;font-size:10px;color:rgba(255,255,255,.2);margin-top:12px;">⚡ Sonic em Ação — Festa do Arthur 2027</p>
   </div>
