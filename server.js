@@ -6,10 +6,29 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Data limite para confirmação (formato AAAA-MM-DD). Pode ser sobrescrita via env DATA_LIMITE.
-// Confirmações após esta data são marcadas internamente, mas o convidado não vê aviso nenhum.
-const DATA_LIMITE = process.env.DATA_LIMITE || '2027-01-03';
-const DATA_FESTA  = process.env.DATA_FESTA  || '2027-01-10';
+// Data limite para confirmação (formato AAAA-MM-DD).
+// Ordem de prioridade: (1) banco → (2) env DATA_LIMITE → (3) constante padrão
+const DATA_LIMITE_PADRAO = process.env.DATA_LIMITE || '2027-01-03';
+const DATA_FESTA         = process.env.DATA_FESTA  || '2027-01-10';
+
+// Cache em memória (evita hit no banco a cada rowToGuest). Atualizado quando alguém salva via PUT.
+let _cacheDataLimite = null;
+async function getDataLimite() {
+  if (_cacheDataLimite) return _cacheDataLimite;
+  try {
+    const { rows } = await pool.query("SELECT valor FROM dados WHERE chave = 'dataLimite'");
+    if (rows.length) {
+      const v = JSON.parse(rows[0].valor);
+      if (v && typeof v === 'string') { _cacheDataLimite = v; return v; }
+    }
+  } catch {}
+  _cacheDataLimite = DATA_LIMITE_PADRAO;
+  return _cacheDataLimite;
+}
+// Versão síncrona pra usar dentro de rowToGuest (retorna do cache ou padrão)
+function getDataLimiteSync() {
+  return _cacheDataLimite || DATA_LIMITE_PADRAO;
+}
 
 // ── Database setup (PostgreSQL) ──────────────────────────────
 const pool = new Pool({
@@ -48,7 +67,9 @@ async function initDB() {
   }
   console.log('Banco pronto!');
 }
-initDB().catch(err => console.error('Erro ao iniciar banco:', err));
+initDB()
+  .then(() => getDataLimite())
+  .catch(err => console.error('Erro ao iniciar banco:', err));
 
 // ── Helpers ──────────────────────────────────────────────────
 function gerarToken() { return crypto.randomBytes(8).toString('hex'); }
@@ -71,8 +92,7 @@ function parsePessoasConfirmadas(raw) {
 // true se a confirmação (se houver) foi feita depois da data limite
 function foiAposPrazo(dataConfirmacao) {
   if (!dataConfirmacao) return false;
-  // DATA_LIMITE é AAAA-MM-DD; compara com fim do dia (23:59:59 local)
-  const limite = new Date(DATA_LIMITE + 'T23:59:59');
+  const limite = new Date(getDataLimiteSync() + 'T23:59:59');
   return new Date(dataConfirmacao) > limite;
 }
 
@@ -173,13 +193,16 @@ app.put('/api/dados/:chave', async (req, res) => {
       'INSERT INTO dados (chave,valor) VALUES ($1,$2) ON CONFLICT (chave) DO UPDATE SET valor=EXCLUDED.valor',
       [req.params.chave, JSON.stringify(req.body)]
     );
+    // Invalida cache se a chave editada é a data limite
+    if (req.params.chave === 'dataLimite') _cacheDataLimite = null;
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── Configuração pública (data da festa e prazo) ─────────────
-app.get('/api/config', (req, res) => {
-  res.json({ dataLimite: DATA_LIMITE, dataFesta: DATA_FESTA });
+app.get('/api/config', async (req, res) => {
+  const dataLimite = await getDataLimite();
+  res.json({ dataLimite, dataFesta: DATA_FESTA });
 });
 
 // ── Confirmação pública ──────────────────────────────────────
@@ -187,7 +210,7 @@ app.get('/confirmar/:token', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM convidados WHERE token = $1', [req.params.token]);
     if (!rows.length) return res.send(paginaErro('Link inválido ou expirado.'));
-    res.send(paginaConfirmacao(rows[0]));
+    res.send(await paginaConfirmacao(rows[0]));
   } catch (e) { res.send(paginaErro('Erro interno.')); }
 });
 
@@ -227,7 +250,9 @@ app.post('/confirmar/:token', async (req, res) => {
 });
 
 // ── Páginas HTML ─────────────────────────────────────────────
-function paginaConfirmacao(guest) {
+async function paginaConfirmacao(guest) {
+  const dataLimite = await getDataLimite();
+  const dataLimiteFmt = new Date(dataLimite + 'T00:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
   const jaRespondeu = guest.confirmado !== null
     ? `<div class="already">${Number(guest.confirmado)===1 ? '✅ Você já confirmou presença!' : '❌ Você já informou que não vai comparecer.'}<br/>Deseja alterar sua resposta?</div>`
     : '';
@@ -383,6 +408,9 @@ form{margin:0;}
       })()}
 
       <div class="confirm-q">VOCÊ VAI COMPARECER?</div>
+      <div style="text-align:center;margin:-6px 0 14px;font-size:12px;color:#FFD700;font-weight:700;">
+        📅 Confirme sua presença até <strong>${dataLimiteFmt}</strong>
+      </div>
       <form id="rsvp-form" method="POST">
         <div class="btns">
           <button type="submit" name="resposta" value="sim" class="btn-sim">🎉 Sim, vou!</button>
@@ -555,6 +583,7 @@ app.get('/seed-convidados', async (req, res) => {
 app.get('/relatorio', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM convidados ORDER BY grupo, nome');
+    const dataLimite = await getDataLimite();
 
     // Contagem real por linha: pessoasConfirmadas se existir, senão fallback nos contadores originais
     const pessoasReais = (r) => {
@@ -680,7 +709,7 @@ app.get('/relatorio', async (req, res) => {
   </div>
 
   <div style="background:#eef4ff;border:1px solid #c6d8ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1a4b9e;">
-    📅 <strong>Prazo de confirmação:</strong> ${new Date(DATA_LIMITE+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}
+    📅 <strong>Prazo de confirmação:</strong> ${new Date(dataLimite+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}
     ${aposPrazo.length ? ` &nbsp;·&nbsp; ⚠️ ${aposPrazo.length} confirmaç${aposPrazo.length===1?'ão':'ões'} após o prazo` : ''}
   </div>
 

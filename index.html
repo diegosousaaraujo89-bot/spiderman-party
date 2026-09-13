@@ -243,6 +243,146 @@
       );
     }
 
+    /* -- Helpers globais -- */
+    // "Yasmin, Arthur (6 anos) e Dayanne" -> ["Yasmin", "Arthur (6 anos)", "Dayanne"]
+    function parseNomes(str) {
+      if (!str || !String(str).trim()) return [];
+      return String(str).split(/,|\s+e\s+/i).map(s=>s.trim()).filter(Boolean);
+    }
+
+    /* -- Modal detalhado do convidado (com checkbox por pessoa) -- */
+    function GuestModal({ guest, C, API, gc, saveGuestFields, marcarEnviado, apiPut, persist, data, onClose, showToast }) {
+      const [nomes, setNomes] = useState(guest.nomes || "");
+      const [idadeCrianca, setIdadeCrianca] = useState(guest.idadeCrianca || "");
+      // Nomes parseados atuais (recalcula quando o campo muda)
+      const nomesArr = parseNomes(nomes);
+      // Set de quem está marcado. Regra: se o convidado ainda não respondeu, todos marcados;
+      // caso já tenha respondido, usa a resposta anterior.
+      const [pessoasSel, setPessoasSel] = useState(() => {
+        if (guest.confirmado === null) return new Set(parseNomes(guest.nomes || ""));
+        return new Set(guest.pessoasConfirmadas || []);
+      });
+
+      const togglePessoa = (n) => {
+        const next = new Set(pessoasSel);
+        if (next.has(n)) next.delete(n); else next.add(n);
+        setPessoasSel(next);
+      };
+      const marcarTodos = () => setPessoasSel(new Set(nomesArr));
+      const desmarcarTodos = () => setPessoasSel(new Set());
+
+      const salvarBase = async () => {
+        await saveGuestFields(guest.id, { nomes, idadeCrianca });
+        showToast("Salvo! ✅");
+      };
+
+      const confirmar = async () => {
+        // Se tem nomes cadastrados, usa a seleção atual; senão marca todos os do grupo (fallback)
+        const pessoas = nomesArr.length ? nomesArr.filter(n=>pessoasSel.has(n)) : [];
+        const fields = { confirmado:true, conviteEnviado:true, pessoasConfirmadas:pessoas, nomes, idadeCrianca };
+        persist({...data, convidados:data.convidados.map(g=>g.id===guest.id?{...g,...fields}:g)});
+        await apiPut("/api/convidados/"+guest.id, fields);
+        showToast(pessoas.length ? `Confirmado: ${pessoas.length} pessoa(s) ✅` : "Presenca confirmada! ✅");
+        onClose();
+      };
+
+      const recusar = async () => {
+        const fields = { confirmado:false, pessoasConfirmadas:[], nomes, idadeCrianca };
+        persist({...data, convidados:data.convidados.map(g=>g.id===guest.id?{...g,...fields}:g)});
+        await apiPut("/api/convidados/"+guest.id, fields);
+        showToast("Marcado como nao vai. ❌");
+        onClose();
+      };
+
+      const totalPrev = (guest.adultos||0)+(guest.criancas||0);
+
+      return (
+        <div style={{ position:"fixed", inset:0, zIndex:500, background:"rgba(0,0,0,.85)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={onClose}>
+          <div className="hw-fade" style={{ background:"#0D1117", borderRadius:"20px 20px 0 0", padding:24, width:"100%", maxWidth:480, border:"1px solid #2C3444", paddingBottom:40, maxHeight:"92vh", overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
+            <div style={{ width:40, height:4, background:"#2C3444", borderRadius:4, margin:"0 auto 20px" }} />
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+              <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24 }}>
+                {guest.grupo==="Família"?"👨‍👩‍👧‍👦":guest.grupo==="Escola"?"🎒":"🤝"}
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:900, fontSize:16 }}>{guest.nome}</div>
+                <div style={{ color:"#666", fontSize:12 }}>{guest.telefone || "Sem telefone"}</div>
+              </div>
+              {guest.conviteEnviado && <span style={{ background:"rgba(26,115,232,.2)", color:"#1A73E8", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>Enviado</span>}
+            </div>
+
+            <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>👥 QUEM VAI COMPARECER</div>
+            <textarea
+              value={nomes}
+              onChange={e=>setNomes(e.target.value)}
+              placeholder="Ex: Yasmin, Arthur (6 anos) e Dayanne"
+              style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", resize:"none", height:66, marginBottom:10 }}
+            />
+
+            {nomesArr.length > 0 && (
+              <div style={{ background:"rgba(255,255,255,.03)", border:`1px solid ${C.border}`, borderRadius:12, padding:12, marginBottom:12 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                  <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700 }}>
+                    ✅ Confirmar individualmente ({pessoasSel.size}/{nomesArr.length})
+                  </div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <button className="hw-btn" onClick={marcarTodos} style={{ background:"rgba(34,197,94,.12)", color:"#22C55E", border:"1px solid rgba(34,197,94,.3)", borderRadius:8, padding:"3px 8px", fontSize:10, fontWeight:700, cursor:"pointer" }}>todos</button>
+                    <button className="hw-btn" onClick={desmarcarTodos} style={{ background:"rgba(239,68,68,.12)", color:"#EF4444", border:"1px solid rgba(239,68,68,.3)", borderRadius:8, padding:"3px 8px", fontSize:10, fontWeight:700, cursor:"pointer" }}>nenhum</button>
+                  </div>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {nomesArr.map(n => (
+                    <label key={n} style={{ display:"flex", alignItems:"center", gap:10, background:pessoasSel.has(n)?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)", border:`1px solid ${pessoasSel.has(n)?"rgba(34,197,94,.35)":C.border}`, borderRadius:8, padding:"8px 10px", cursor:"pointer", userSelect:"none", transition:"all .15s" }}>
+                      <input type="checkbox" checked={pessoasSel.has(n)} onChange={()=>togglePessoa(n)} style={{ width:16, height:16, accentColor:"#22C55E", cursor:"pointer" }} />
+                      <span style={{ fontSize:13, fontWeight:700, color:pessoasSel.has(n)?"#F2F2F2":C.muted, textDecoration:pessoasSel.has(n)?"none":"line-through" }}>{n}</span>
+                    </label>
+                  ))}
+                </div>
+                <div style={{ fontSize:10, color:C.muted, marginTop:8, fontStyle:"italic" }}>
+                  Desmarque quem não vai. A seleção é usada quando você clica em "Confirmou presença".
+                </div>
+              </div>
+            )}
+
+            <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>🎂 IDADE DAS CRIANÇAS</div>
+            <input
+              value={idadeCrianca}
+              onChange={e=>setIdadeCrianca(e.target.value)}
+              placeholder="Ex: 6 anos"
+              style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", marginBottom:10 }}
+            />
+            <button className="hw-btn" onClick={salvarBase}
+              style={{ background:C.success, color:"#fff", border:"none", borderRadius:12, padding:"12px", fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:14, cursor:"pointer", width:"100%", marginBottom:14 }}>
+              💾 Salvar lista de convidados
+            </button>
+
+            <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
+            <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+              <button className="hw-btn" onClick={()=>{ const p=(guest.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+guest.token; const t=encodeURIComponent("🎮 Sonic em Ação! 🦔\n\nOiii, "+guest.nome+", tudo bem? 😊\n\nVenho aqui te fazer um convite super especial!\nSerá um dia cheio de alegria, diversão e momentos inesquecíveis, e a sua presença vai deixar tudo ainda mais completo.\n\nEspero você para comemorarmos juntos! 🎉✨\n\n📅 10/01/2027 às 12:30h\n📍 R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba\n🏊 Piscina liberada — traga roupa de banho!\n\n👇 Confirme sua presença:\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(guest.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
+                style={{ flex:1, background:"rgba(37,211,102,.15)", color:"#25D366", border:"1.5px solid rgba(37,211,102,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                <span style={{ fontSize:22 }}>💬</span>WhatsApp
+              </button>
+              <button className="hw-btn" onClick={()=>{ const p=(guest.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+guest.token; const t=encodeURIComponent("Festa do Arthur - Sonic em Ação! 10/01/2027 · 12:30h. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(guest.id); showToast("SMS aberto com link!"); }}
+                style={{ flex:1, background:"rgba(26,115,232,.15)", color:"#1A73E8", border:"1.5px solid rgba(26,115,232,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                <span style={{ fontSize:22 }}>📩</span>SMS
+              </button>
+            </div>
+
+            <div style={{ fontSize:11, color:"#666", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>REGISTRAR RESPOSTA</div>
+            <div style={{ display:"flex", gap:10, marginBottom:12 }}>
+              <button className="hw-btn" onClick={confirmar} style={{ flex:1, background:"rgba(34,197,94,.15)", color:"#22C55E", border:"1.5px solid rgba(34,197,94,.4)", borderRadius:12, padding:12, fontWeight:900, fontSize:13, cursor:"pointer" }}>
+                Confirmou presença{nomesArr.length ? ` (${pessoasSel.size})` : ""}
+              </button>
+              <button className="hw-btn" onClick={recusar} style={{ flex:1, background:"rgba(239,68,68,.15)", color:"#EF4444", border:"1.5px solid rgba(239,68,68,.4)", borderRadius:12, padding:12, fontWeight:900, fontSize:13, cursor:"pointer" }}>
+                Nao vai
+              </button>
+            </div>
+            <button className="hw-btn" onClick={onClose} style={{ width:"100%", background:"none", border:"1px solid #2C3444", borderRadius:12, padding:10, color:"#666", fontWeight:700, fontSize:13, cursor:"pointer" }}>Fechar</button>
+          </div>
+        </div>
+      );
+    }
+
     function App() {
       const [splash, setSplash] = useState(true);
       const [tab, setTab] = useState("home");
@@ -261,13 +401,16 @@
       const [newCheck, setNewCheck] = useState({ item:"", categoria:"Buffet" });
 
       /* -- Carrega tudo do servidor ao iniciar e a cada 30s -- */
+      const [config, setConfig] = useState({ dataLimite:"", dataFesta:"" });
       const loadFromServer = useCallback(async () => {
-        const [convidados, checklist, orcamento, cotacoes] = await Promise.all([
+        const [convidados, checklist, orcamento, cotacoes, cfg] = await Promise.all([
           apiGet("/api/convidados"),
           apiGet("/api/dados/checklist"),
           apiGet("/api/dados/orcamento"),
           apiGet("/api/dados/cotacoes"),
+          apiGet("/api/config"),
         ]);
+        if (cfg) setConfig(cfg);
         setData(prev => {
           const updated = {
             ...prev,
@@ -523,62 +666,17 @@
       return (
         <div style={{ background:C.black, minHeight:"100vh", maxWidth:480, margin:"0 auto", position:"relative" }}>
           {toast && <div style={{ position:"fixed", top:20, left:"50%", transform:"translateX(-50%)", zIndex:9999, background:"#1a1a2e", border:"1px solid #1A73E8", color:"#F2F2F2", padding:"10px 20px", borderRadius:30, fontSize:13, fontWeight:700, whiteSpace:"nowrap", boxShadow:"0 4px 24px rgba(0,0,0,.8)" }}>{toast}</div>}
-          {modal && (
-            <div style={{ position:"fixed", inset:0, zIndex:500, background:"rgba(0,0,0,.85)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={()=>setModal(null)}>
-              <div className="hw-fade" style={{ background:"#0D1117", borderRadius:"20px 20px 0 0", padding:24, width:"100%", maxWidth:480, border:"1px solid #2C3444", paddingBottom:40 }} onClick={e=>e.stopPropagation()}>
-                <div style={{ width:40, height:4, background:"#2C3444", borderRadius:4, margin:"0 auto 20px" }} />
-                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-                  <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24 }}>
-                    {modal.grupo==="Familia"?"👨‍👩‍👧‍👦":modal.grupo==="Escola"?"🎒":"🤝"}
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:900, fontSize:16 }}>{modal.nome}</div>
-                    <div style={{ color:"#666", fontSize:12 }}>{modal.telefone || "Sem telefone"}</div>
-                  </div>
-                  {modal.conviteEnviado && <span style={{ background:"rgba(26,115,232,.2)", color:"#1A73E8", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>Enviado</span>}
-                </div>
-                <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>👥 QUEM VAI COMPARECER</div>
-                <textarea
-                  value={modal.nomes||""}
-                  onChange={e=>setModal({...modal,nomes:e.target.value})}
-                  placeholder="Ex: Yasmin, Arthur (6 anos) e Dayanne"
-                  style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", resize:"none", height:72, marginBottom:10 }}
-                />
-                <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:8 }}>🎂 IDADE DAS CRIANÇAS</div>
-                <input
-                  value={modal.idadeCrianca||""}
-                  onChange={e=>setModal({...modal,idadeCrianca:e.target.value})}
-                  placeholder="Ex: 6 anos"
-                  style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:13, outline:"none", width:"100%", marginBottom:10 }}
-                />
-                <button className="hw-btn" onClick={async ()=>{ await saveGuestFields(modal.id, {nomes:modal.nomes||"", idadeCrianca:modal.idadeCrianca||""}); showToast("Salvo! ✅"); }}
-                  style={{ background:C.success, color:"#fff", border:"none", borderRadius:12, padding:"12px", fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:14, cursor:"pointer", width:"100%", marginBottom:14 }}>
-                  💾 Salvar lista de convidados
-                </button>
-                <div style={{ fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>ENVIAR CONVITE</div>
-                <div style={{ display:"flex", gap:10, marginBottom:18 }}>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("🎮 Sonic em Ação! 🦔\n\nOiii, "+modal.nome+", tudo bem? 😊\n\nVenho aqui te fazer um convite super especial!\nSerá um dia cheio de alegria, diversão e momentos inesquecíveis, e a sua presença vai deixar tudo ainda mais completo.\n\nEspero você para comemorarmos juntos! 🎉✨\n\n📅 10/01/2027 às 12:30h\n📍 R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba\n🏊 Piscina liberada — traga roupa de banho!\n\n👇 Confirme sua presença:\n\nConfirme sua presenca pelo link: "+link); window.open(p?"https://wa.me/55"+p+"?text="+t:"https://wa.me/?text="+t,"_blank"); marcarEnviado(modal.id); showToast("WhatsApp aberto com link de confirmacao!"); }}
-                    style={{ flex:1, background:"rgba(37,211,102,.15)", color:"#25D366", border:"1.5px solid rgba(37,211,102,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                    <span style={{ fontSize:22 }}>💬</span>WhatsApp
-                  </button>
-                  <button className="hw-btn" onClick={()=>{ const p=(modal.telefone||"").replace(/\D/g,""); const link=API+"/confirmar/"+modal.token; const t=encodeURIComponent("Festa do Arthur - Sonic em Ação! 10/01/2027 · 12:30h. Confirme sua presenca: "+link); window.open(p?"sms:"+p+"?body="+t:"sms:?body="+t,"_blank"); marcarEnviado(modal.id); showToast("SMS aberto com link!"); }}
-                    style={{ flex:1, background:"rgba(26,115,232,.15)", color:"#1A73E8", border:"1.5px solid rgba(26,115,232,.4)", borderRadius:12, padding:"12px 8px", fontWeight:900, fontSize:13, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                    <span style={{ fontSize:22 }}>📩</span>SMS
-                  </button>
-                </div>
-                <div style={{ fontSize:11, color:"#666", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginBottom:10 }}>REGISTRAR RESPOSTA</div>
-                <div style={{ display:"flex", gap:10, marginBottom:12 }}>
-                  <button className="hw-btn" onClick={()=>confirmarConvite(modal.id)} style={{ flex:1, background:"rgba(34,197,94,.15)", color:"#22C55E", border:"1.5px solid rgba(34,197,94,.4)", borderRadius:12, padding:12, fontWeight:900, fontSize:13, cursor:"pointer" }}>
-                    Confirmou presença
-                  </button>
-                  <button className="hw-btn" onClick={()=>recusarConvite(modal.id)} style={{ flex:1, background:"rgba(239,68,68,.15)", color:"#EF4444", border:"1.5px solid rgba(239,68,68,.4)", borderRadius:12, padding:12, fontWeight:900, fontSize:13, cursor:"pointer" }}>
-                    Nao vai
-                  </button>
-                </div>
-                <button className="hw-btn" onClick={()=>setModal(null)} style={{ width:"100%", background:"none", border:"1px solid #2C3444", borderRadius:12, padding:10, color:"#666", fontWeight:700, fontSize:13, cursor:"pointer" }}>Fechar</button>
-              </div>
-            </div>
-          )}
+          {modal && <GuestModal
+            guest={modal}
+            C={C} API={API} gc={gc}
+            saveGuestFields={saveGuestFields}
+            marcarEnviado={marcarEnviado}
+            apiPut={apiPut}
+            persist={persist}
+            data={data}
+            onClose={()=>setModal(null)}
+            showToast={showToast}
+          />}
           {splash && <Splash onDone={()=>setSplash(false)} />}
 
           {parcelaModal && (
@@ -667,6 +765,29 @@
             {tab==="home" && (
               <div>
                 <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:18, letterSpacing:2, color:C.yellow, marginBottom:12 }}>📊 Resumo</div>
+
+                <div className="hw-card" style={{ ...cardSt, marginBottom:12, background:`linear-gradient(135deg, rgba(255,215,0,.08), rgba(255,215,0,.02))`, border:`1px solid ${C.yellow}44` }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.yellow }}>📅 PRAZO DE CONFIRMAÇÃO</div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <input
+                      type="date"
+                      value={config.dataLimite || ""}
+                      onChange={async e => {
+                        const v = e.target.value;
+                        setConfig(c => ({...c, dataLimite:v}));
+                        await apiPut("/api/dados/dataLimite", v);
+                        showToast("Data limite atualizada ✅");
+                      }}
+                      style={{ flex:1, background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:14, outline:"none", colorScheme:"dark" }}
+                    />
+                  </div>
+                  <div style={{ fontSize:11, color:C.muted, marginTop:8, lineHeight:1.5 }}>
+                    Aparece no convite: "Confirme sua presença até <strong style={{ color:C.yellow }}>{config.dataLimite ? new Date(config.dataLimite+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"}) : "—"}</strong>". Confirmações após essa data recebem o badge <span style={{ background:"rgba(245,158,11,.18)", color:"#F59E0B", padding:"1px 6px", borderRadius:8, fontSize:9, fontWeight:700 }}>⏰ após prazo</span> no relatório.
+                  </div>
+                </div>
+
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
                   <StatCard icon="✅" value={conf.length} label="Confirmados" color={C.success} />
                   <StatCard icon="⏳" value={pend.length} label="Aguardando" color={C.yellow} />
@@ -805,7 +926,14 @@
                             {g.aposPrazo && <span title="Confirmou após o prazo" style={{ fontSize:9, background:"rgba(245,158,11,.18)", color:"#F59E0B", padding:"1px 6px", borderRadius:8, fontWeight:700 }}>⏰ após prazo</span>}
                           </div>
                           <div style={{ display:"flex", gap:5, marginTop:3, alignItems:"center", flexWrap:"wrap" }}>
-                            <span style={{ background:gc(g.grupo)+"22", color:gc(g.grupo), borderRadius:20, padding:"2px 9px", fontSize:10, fontWeight:700 }}>{g.grupo}</span>
+                            <select
+                              value={g.grupo}
+                              onChange={e=>editGuest(g.id,"grupo",e.target.value)}
+                              style={{ background:gc(g.grupo)+"22", color:gc(g.grupo), borderRadius:20, padding:"2px 22px 2px 9px", fontSize:10, fontWeight:700, border:`1px solid ${gc(g.grupo)}44`, cursor:"pointer", outline:"none", fontFamily:"'Nunito',sans-serif", appearance:"none", WebkitAppearance:"none", MozAppearance:"none", backgroundImage:`url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><path fill='${encodeURIComponent(gc(g.grupo))}' d='M0 2l4 4 4-4z'/></svg>")`, backgroundRepeat:"no-repeat", backgroundPosition:"right 6px center" }}>
+                              <option value="Família" style={{ background:"#1a1a2e", color:"#F2F2F2" }}>Família</option>
+                              <option value="Escola" style={{ background:"#1a1a2e", color:"#F2F2F2" }}>Escola</option>
+                              <option value="Amigos" style={{ background:"#1a1a2e", color:"#F2F2F2" }}>Amigos</option>
+                            </select>
                             <span style={{ color:C.muted, fontSize:10 }}>
                               👤 <EditField value={g.adultos} type="number" onSave={v=>editGuest(g.id,"adultos",v)} style={{ color:C.muted, fontSize:10 }} />
                               {" "}👶 <EditField value={g.criancas} type="number" onSave={v=>editGuest(g.id,"criancas",v)} style={{ color:C.muted, fontSize:10 }} />
@@ -813,9 +941,7 @@
                             <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone||""} placeholder="+ telefone" onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>
                           {g.criancas>0 && g.idadeCrianca && <span style={{ background:"rgba(251,146,60,.15)", color:"#FB923C", borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>🎂 {g.idadeCrianca}</span>}
                           {(() => {
-                            // Parse dos nomes cadastrados (mesma lógica do servidor)
-                            const parse = s => !s ? [] : String(s).split(/,|\s+e\s+/i).map(x=>x.trim()).filter(Boolean);
-                            const nomesArr = parse(g.nomes);
+                            const nomesArr = parseNomes(g.nomes);
                             const confirmadas = g.pessoasConfirmadas || [];
                             // Se confirmou e temos lista real: mostrar quem vai e quem não vai
                             if (g.confirmado===true && (confirmadas.length || nomesArr.length)) {
