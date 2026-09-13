@@ -6,6 +6,11 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Data limite para confirmação (formato AAAA-MM-DD). Pode ser sobrescrita via env DATA_LIMITE.
+// Confirmações após esta data são marcadas internamente, mas o convidado não vê aviso nenhum.
+const DATA_LIMITE = process.env.DATA_LIMITE || '2027-01-03';
+const DATA_FESTA  = process.env.DATA_FESTA  || '2027-01-10';
+
 // ── Database setup (PostgreSQL) ──────────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -35,6 +40,8 @@ async function initDB() {
   const migrations = [
     `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "idadeCrianca" TEXT DEFAULT ''`,
     `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "nomes" TEXT DEFAULT ''`,
+    `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "pessoasConfirmadas" TEXT DEFAULT ''`,
+    `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "dataConfirmacao" TIMESTAMPTZ`,
   ];
   for (const sql of migrations) {
     await pool.query(sql).catch(()=>{});
@@ -45,6 +52,29 @@ initDB().catch(err => console.error('Erro ao iniciar banco:', err));
 
 // ── Helpers ──────────────────────────────────────────────────
 function gerarToken() { return crypto.randomBytes(8).toString('hex'); }
+
+// "Yasmin, Arthur (6 anos) e Dayanne" -> ["Yasmin", "Arthur (6 anos)", "Dayanne"]
+function parseNomes(str) {
+  if (!str || !String(str).trim()) return [];
+  return String(str)
+    .split(/,|\s+e\s+/i)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function parsePessoasConfirmadas(raw) {
+  if (!raw) return [];
+  try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : []; }
+  catch { return []; }
+}
+
+// true se a confirmação (se houver) foi feita depois da data limite
+function foiAposPrazo(dataConfirmacao) {
+  if (!dataConfirmacao) return false;
+  // DATA_LIMITE é AAAA-MM-DD; compara com fim do dia (23:59:59 local)
+  const limite = new Date(DATA_LIMITE + 'T23:59:59');
+  return new Date(dataConfirmacao) > limite;
+}
 
 function rowToGuest(row) {
   return {
@@ -58,6 +88,9 @@ function rowToGuest(row) {
     conviteEnviado: Number(row.conviteEnviado) === 1,
     idadeCrianca: row.idadeCrianca || '',
     nomes: row.nomes || '',
+    pessoasConfirmadas: parsePessoasConfirmadas(row.pessoasConfirmadas),
+    dataConfirmacao: row.dataConfirmacao || null,
+    aposPrazo: foiAposPrazo(row.dataConfirmacao),
     token: row.token,
   };
 }
@@ -98,7 +131,7 @@ app.post('/api/convidados', async (req, res) => {
 app.put('/api/convidados/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const allowed = ['nome','grupo','adultos','criancas','telefone','confirmado','conviteEnviado','idadeCrianca','nomes'];
+    const allowed = ['nome','grupo','adultos','criancas','telefone','confirmado','conviteEnviado','idadeCrianca','nomes','pessoasConfirmadas'];
     const updates = []; const values = []; let i = 1;
     allowed.forEach(f => {
       if (f in req.body) {
@@ -106,6 +139,7 @@ app.put('/api/convidados/:id', async (req, res) => {
         let val = req.body[f];
         if (f === 'confirmado') val = val === null ? null : val ? 1 : 0;
         if (f === 'conviteEnviado') val = val ? 1 : 0;
+        if (f === 'pessoasConfirmadas') val = Array.isArray(val) ? JSON.stringify(val) : (val || '');
         values.push(val);
       }
     });
@@ -143,6 +177,11 @@ app.put('/api/dados/:chave', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Configuração pública (data da festa e prazo) ─────────────
+app.get('/api/config', (req, res) => {
+  res.json({ dataLimite: DATA_LIMITE, dataFesta: DATA_FESTA });
+});
+
 // ── Confirmação pública ──────────────────────────────────────
 app.get('/confirmar/:token', async (req, res) => {
   try {
@@ -157,12 +196,33 @@ app.post('/confirmar/:token', async (req, res) => {
     const { resposta } = req.body;
     const { rows } = await pool.query('SELECT * FROM convidados WHERE token = $1', [req.params.token]);
     if (!rows.length) return res.status(404).send(paginaErro('Token inválido'));
+    const guest = rows[0];
     const confirmado = resposta === 'sim' ? 1 : 0;
+
+    // Coletar nomes marcados. O form envia um campo "pessoas" pra cada checkbox marcado
+    // (express.urlencoded coleta em array quando repetido).
+    let pessoasArr = [];
+    if (confirmado === 1) {
+      const p = req.body.pessoas;
+      if (Array.isArray(p)) pessoasArr = p.filter(Boolean);
+      else if (typeof p === 'string' && p) pessoasArr = [p];
+      else {
+        // Fallback: se o convidado não tem nomes cadastrados, assume o próprio nome dele
+        const listaOriginal = parseNomes(guest.nomes);
+        pessoasArr = listaOriginal.length ? listaOriginal : [guest.nome];
+      }
+    }
+
     await pool.query(
-      'UPDATE convidados SET confirmado = $1, "conviteEnviado" = 1 WHERE token = $2',
-      [confirmado, req.params.token]
+      `UPDATE convidados
+         SET confirmado = $1,
+             "conviteEnviado" = 1,
+             "pessoasConfirmadas" = $2,
+             "dataConfirmacao" = NOW()
+       WHERE token = $3`,
+      [confirmado, JSON.stringify(pessoasArr), req.params.token]
     );
-    res.send(paginaObrigado(rows[0].nome, resposta === 'sim'));
+    res.send(paginaObrigado(guest.nome, resposta === 'sim', pessoasArr));
   } catch (e) { res.send(paginaErro('Erro ao salvar resposta.')); }
 });
 
@@ -216,7 +276,7 @@ body{background:#0a0f1e;font-family:'Nunito',sans-serif;color:#fff;overflow-x:hi
 .btns{display:flex;gap:12px;}
 .btn-sim{flex:1;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:16px;padding:18px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(34,197,94,.3);}
 .btn-nao{flex:1;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:18px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;cursor:pointer;}
-form{flex:1;margin:0;}
+form{margin:0;}
 .already{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:14px;padding:14px;margin-bottom:16px;font-size:13px;color:#FFD700;text-align:center;}
 </style>
 </head>
@@ -267,11 +327,6 @@ form{flex:1;margin:0;}
         </div>
       </div>
       <div class="guest-name">Olá, ${guest.nome}! 😊</div>
-      ${guest.nomes ? `
-      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 16px;margin:10px 0;text-align:left;">
-        <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">👥 Convidados</div>
-        <div style="font-size:14px;font-weight:700;color:#fff;line-height:1.6;">${guest.nomes}</div>
-      </div>` : ''}
       <div style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;margin-top:4px;">
         Venho aqui te fazer um convite super especial! 🎉<br/>
         Será um dia cheio de alegria, diversão e momentos inesquecíveis,<br/>
@@ -279,13 +334,62 @@ form{flex:1;margin:0;}
         <strong style="color:#FFD700">Espero você para comemorarmos juntos!</strong>
       </div>
     </div>
+
+    <div class="card" style="text-align:center;">
+      <div style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:3px;color:#FFD700;margin-bottom:4px;">👗 DRESS CODE</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:16px;">Venha com a nossa paleta de cores</div>
+      <div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin-top:6px;">
+        <div style="text-align:center;">
+          <div style="width:64px;height:64px;border-radius:12px;background:#6B8FB5;box-shadow:0 4px 14px rgba(107,143,181,.4);border:2px solid rgba(255,255,255,.15);"></div>
+          <div style="margin-top:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);">azul/jeans</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:64px;height:64px;border-radius:12px;background:#D4A67C;box-shadow:0 4px 14px rgba(212,166,124,.4);border:2px solid rgba(255,255,255,.15);"></div>
+          <div style="margin-top:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);">bege</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:64px;height:64px;border-radius:12px;background:#FFFFFF;box-shadow:0 4px 14px rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.35);"></div>
+          <div style="margin-top:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);">branco</div>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       ${jaRespondeu}
+      ${(() => {
+        const nomesArr = parseNomes(guest.nomes);
+        const jaConfirmadas = parsePessoasConfirmadas(guest.pessoasConfirmadas);
+        if (!nomesArr.length) return '';
+        return `
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;margin-bottom:16px;text-align:left;">
+          <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">👥 Quem vai comparecer?</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px;line-height:1.5;">Desmarque quem não vai. Deixe marcado quem vai comparecer.</div>
+          <div id="pessoas-lista" style="display:flex;flex-direction:column;gap:8px;">
+            ${nomesArr.map((n, i) => {
+              // Se ainda não respondeu: todos marcados. Se já respondeu: manter escolha anterior.
+              const marcado = guest.confirmado === null
+                ? true
+                : jaConfirmadas.includes(n);
+              const safe = String(n).replace(/"/g,'&quot;');
+              return `
+                <label style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;cursor:pointer;user-select:none;">
+                  <input type="checkbox" name="pessoas" value="${safe}" ${marcado?'checked':''}
+                    style="width:20px;height:20px;accent-color:#22C55E;cursor:pointer;flex-shrink:0;" form="rsvp-form"/>
+                  <span style="font-size:14px;font-weight:700;color:#fff;">${n}</span>
+                </label>`;
+            }).join('')}
+          </div>
+        </div>`;
+      })()}
+
       <div class="confirm-q">VOCÊ VAI COMPARECER?</div>
-      <div class="btns">
-        <form method="POST"><input type="hidden" name="resposta" value="sim"/><button type="submit" class="btn-sim">🎉 Sim, vou!</button></form>
-        <form method="POST"><input type="hidden" name="resposta" value="nao"/><button type="submit" class="btn-nao">😢 Não vou</button></form>
-      </div>
+      <form id="rsvp-form" method="POST">
+        <div class="btns">
+          <button type="submit" name="resposta" value="sim" class="btn-sim">🎉 Sim, vou!</button>
+          <button type="submit" name="resposta" value="nao" class="btn-nao"
+            onclick="document.querySelectorAll('#pessoas-lista input').forEach(c=>c.checked=false)">😢 Não vou</button>
+        </div>
+      </form>
     </div>
     <p style="text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:16px;">⚡ Sonic em Ação — Festa do Arthur 2027</p>
   </div>
@@ -348,7 +452,7 @@ function showConfirm(){
 </html>`;
 }
 
-function paginaObrigado(nome, confirmado) {
+function paginaObrigado(nome, confirmado, pessoas = []) {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -374,6 +478,12 @@ p{font-size:16px;color:rgba(255,255,255,.8);line-height:1.7;}
     ? `<strong>${nome}</strong>, sua presença foi confirmada!<br/>Te esperamos na festa do Arthur! 🦔⚡🎂`
     : `<strong>${nome}</strong>, sentiremos sua falta!<br/>Obrigado por avisar! 🦔`
   }</p>
+  ${confirmado && pessoas.length ? `
+  <div style="margin-top:18px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:12px 16px;text-align:left;">
+    <div style="font-size:11px;color:#4ADE80;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">✅ Confirmado(s) — ${pessoas.length} ${pessoas.length===1?'pessoa':'pessoas'}</div>
+    ${pessoas.map(p=>`<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.7;">• ${p}</div>`).join('')}
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:8px;">Se precisar mudar algo, é só reabrir o mesmo link.</div>
+  </div>` : ''}
   <p style="margin-top:20px;font-size:12px;color:rgba(255,255,255,.3);">Sonic em Ação — 10/01/2027 às 12:30h</p>
 </div>
 </body>
@@ -445,13 +555,26 @@ app.get('/seed-convidados', async (req, res) => {
 app.get('/relatorio', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM convidados ORDER BY grupo, nome');
-    const confirmados = rows.filter(r => Number(r.confirmado) === 1);
-    const pendentes = rows.filter(r => r.confirmado === null);
-    const recusaram = rows.filter(r => Number(r.confirmado) === 0);
 
+    // Contagem real por linha: pessoasConfirmadas se existir, senão fallback nos contadores originais
+    const pessoasReais = (r) => {
+      const arr = parsePessoasConfirmadas(r.pessoasConfirmadas);
+      if (arr.length) return arr;
+      return null; // sinaliza fallback pra contadores
+    };
+    const totalPessoasConfirmadas = (r) => {
+      const arr = pessoasReais(r);
+      return arr ? arr.length : (r.adultos + r.criancas);
+    };
+
+    const confirmados = rows.filter(r => Number(r.confirmado) === 1);
+    const pendentes   = rows.filter(r => r.confirmado === null);
+    const recusaram   = rows.filter(r => Number(r.confirmado) === 0);
+    const aposPrazo   = rows.filter(r => foiAposPrazo(r.dataConfirmacao));
+
+    const totalConfirmadasReal = confirmados.reduce((a,r)=>a+totalPessoasConfirmadas(r),0);
     const totalAdultos = confirmados.reduce((a,r)=>a+r.adultos,0);
     const totalCriancas = confirmados.reduce((a,r)=>a+r.criancas,0);
-    const totalGeral = confirmados.reduce((a,r)=>a+r.adultos+r.criancas,0);
     const totalAdultosGeral = rows.reduce((a,r)=>a+r.adultos,0);
     const totalCriancasGeral = rows.reduce((a,r)=>a+r.criancas,0);
     const totalGeralTodos = rows.reduce((a,r)=>a+r.adultos+r.criancas,0);
@@ -462,28 +585,49 @@ app.get('/relatorio', async (req, res) => {
       const totalC = lista.reduce((a,r)=>a+r.criancas,0);
       return `
         <div class="grupo">
-          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos &nbsp;|&nbsp; 👤 ${totalA} adultos &nbsp; 👶 ${totalC} crianças &nbsp; Total: ${totalA+totalC}</div>
+          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos &nbsp;|&nbsp; 👤 ${totalA} adultos &nbsp; 👶 ${totalC} crianças &nbsp; Estimado: ${totalA+totalC}</div>
           <table>
             <thead><tr>
-              <th style="width:18%">Responsável</th>
-              <th style="width:35%">👥 Quem vai comparecer</th>
-              <th style="width:8%;text-align:center">Adultos</th>
-              <th style="width:8%;text-align:center">Crianças</th>
-              <th style="width:15%">🎂 Idade(s)</th>
-              <th style="width:8%;text-align:center">Total</th>
-              <th style="width:8%;text-align:center">Status</th>
+              <th style="width:16%">Responsável</th>
+              <th style="width:32%">👥 Confirmados</th>
+              <th style="width:8%;text-align:center">Estimado</th>
+              <th style="width:8%;text-align:center">Real</th>
+              <th style="width:14%">🎂 Idade(s)</th>
+              <th style="width:10%;text-align:center">Status</th>
+              <th style="width:12%;text-align:center">Confirmou em</th>
             </tr></thead>
             <tbody>
-              ${lista.map(r => `
-                <tr style="background:${Number(r.confirmado)===1?'#f0fff4':r.confirmado===null?'#fffbf0':'#fff5f5'}">
+              ${lista.map(r => {
+                const conf = Number(r.confirmado);
+                const bg = conf===1?'#f0fff4':r.confirmado===null?'#fffbf0':'#fff5f5';
+                const confirmadasArr = pessoasReais(r);
+                const contagemReal = totalPessoasConfirmadas(r);
+                const foraDoPrazo = foiAposPrazo(r.dataConfirmacao);
+                let quemHtml;
+                if (conf === 1 && confirmadasArr) {
+                  quemHtml = `<ul style="margin:0;padding-left:18px;color:#166534;">${confirmadasArr.map(n=>`<li>${n}</li>`).join('')}</ul>`;
+                } else if (conf === 1) {
+                  quemHtml = `<span style="color:#666">${r.nomes || 'Todos ('+(r.adultos+r.criancas)+')'}</span>`;
+                } else {
+                  quemHtml = `<span style="color:#bbb">${r.nomes||'—'}</span>`;
+                }
+                const dataFmt = r.dataConfirmacao
+                  ? new Date(r.dataConfirmacao).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
+                  : '—';
+                return `
+                <tr style="background:${bg}">
                   <td><strong>${r.nome}</strong><br/><small style="color:#999">${r.grupo}</small></td>
-                  <td style="color:#333;word-break:break-word">${r.nomes||'<span style="color:#bbb">—</span>'}</td>
-                  <td style="text-align:center">${r.adultos}</td>
-                  <td style="text-align:center">${r.criancas}</td>
+                  <td style="word-break:break-word;font-size:13px;">${quemHtml}</td>
+                  <td style="text-align:center;color:#888">${r.adultos+r.criancas}</td>
+                  <td style="text-align:center;font-weight:700;color:${conf===1?'#166534':'#bbb'}">${conf===1?contagemReal:'—'}</td>
                   <td style="color:#e67e22;word-break:break-word">${r.idadeCrianca||'—'}</td>
-                  <td style="text-align:center;font-weight:700">${r.adultos+r.criancas}</td>
-                  <td style="text-align:center">${Number(r.confirmado)===1?'✅':r.confirmado===null?'⏳':'❌'}</td>
-                </tr>`).join('')}
+                  <td style="text-align:center">${conf===1?'✅':r.confirmado===null?'⏳':'❌'}</td>
+                  <td style="text-align:center;font-size:12px;color:#666">
+                    ${dataFmt}
+                    ${foraDoPrazo?'<br/><span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;">após prazo</span>':''}
+                  </td>
+                </tr>`;
+              }).join('')}
             </tbody>
           </table>
         </div>`;
@@ -529,13 +673,18 @@ app.get('/relatorio', async (req, res) => {
   </div>
 
   <div class="resumo">
-    <div class="card"><div class="num" style="color:#0066CC">${totalGeralTodos}</div><div class="label">Total Geral</div><div style="font-size:11px;color:#aaa;margin-top:4px">${totalAdultosGeral} adultos · ${totalCriancasGeral} crianças</div></div>
-    <div class="card"><div class="num" style="color:#22c55e">${totalGeral}</div><div class="label">✅ Confirmados</div><div style="font-size:11px;color:#aaa;margin-top:4px">${totalAdultos} adultos · ${totalCriancas} crianças</div></div>
+    <div class="card"><div class="num" style="color:#0066CC">${totalGeralTodos}</div><div class="label">Total Estimado</div><div style="font-size:11px;color:#aaa;margin-top:4px">${totalAdultosGeral} adultos · ${totalCriancasGeral} crianças</div></div>
+    <div class="card"><div class="num" style="color:#22c55e">${totalConfirmadasReal}</div><div class="label">✅ Confirmados (real)</div><div style="font-size:11px;color:#aaa;margin-top:4px">${confirmados.length} grupos · pessoas exatas</div></div>
     <div class="card"><div class="num" style="color:#f59e0b">${pendentes.length}</div><div class="label">⏳ Aguardando</div></div>
     <div class="card"><div class="num" style="color:#ef4444">${recusaram.length}</div><div class="label">❌ Recusaram</div></div>
   </div>
 
-  ${pendentes.length ? `<div class="pendente-warn">⚠️ <strong>${pendentes.length} grupos</strong> ainda não confirmaram presença. Total estimado se todos confirmarem: <strong>${rows.reduce((a,r)=>a+r.adultos+r.criancas,0)} pessoas</strong>.</div>` : ''}
+  <div style="background:#eef4ff;border:1px solid #c6d8ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1a4b9e;">
+    📅 <strong>Prazo de confirmação:</strong> ${new Date(DATA_LIMITE+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}
+    ${aposPrazo.length ? ` &nbsp;·&nbsp; ⚠️ ${aposPrazo.length} confirmaç${aposPrazo.length===1?'ão':'ões'} após o prazo` : ''}
+  </div>
+
+  ${pendentes.length ? `<div class="pendente-warn">⚠️ <strong>${pendentes.length} grupos</strong> ainda não confirmaram. Se todos confirmarem, chega em <strong>${totalGeralTodos} pessoas</strong> (estimativa máxima).</div>` : ''}
 
   ${renderGrupo(rows.filter(r=>r.grupo==='Família'), '👨‍👩‍👧‍👦 Família', '#0066CC')}
   ${renderGrupo(rows.filter(r=>r.grupo==='Amigos'), '🤝 Amigos', '#7C3AED')}

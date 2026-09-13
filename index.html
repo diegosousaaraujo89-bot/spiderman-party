@@ -12,8 +12,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Festa Arthur" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png" type="image/png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet" />
@@ -402,19 +400,50 @@
       };
 
       const saveCotacoes = async (cotacoes) => {
-        // Always sort each service options by valor ascending (cheapest first)
+        // Sempre ordena opções por valor (mais barata primeiro)
         const sorted = cotacoes.map(s=>({...s, opcoes:[...s.opcoes].sort((a,b)=>a.valor-b.valor)}));
-        // Sync orcamento: use escolhido price, or cheapest if none selected
-        const orcamento = data.orcamento.map(o => {
-          const orcId = o.id;
-          const srv = Object.keys(COT_ORC_MAP).find(k => COT_ORC_MAP[k] === orcId);
-          if (!srv) return o;
-          const servico = sorted.find(s => s.servico === srv);
-          if (!servico || !servico.opcoes.length) return o;
-          const escolhido = servico.opcoes.find(op => op.escolhido);
-          const melhor = servico.opcoes[0]; // already sorted, index 0 = cheapest
-          return { ...o, valor: escolhido ? escolhido.valor : melhor.valor };
-        });
+
+        // Sync com Gastos:
+        //  - Cada serviço da cotação vira 1 item em Gastos (com cotacaoSrv marcado)
+        //  - Itens manuais em Gastos (sem cotacaoSrv) são preservados
+        //  - Se apagou um serviço da cotação, o item correspondente em Gastos também some
+        const findOrcItem = (srvName) => {
+          // 1. Já ligado por cotacaoSrv (caminho novo)
+          let item = data.orcamento.find(o => o.cotacaoSrv === srvName);
+          if (item) return item;
+          // 2. Compat com mapa antigo (Buffet, Bolo, Decoracao, DJ Animacao, Fotografo)
+          const legacyId = COT_ORC_MAP[srvName];
+          if (legacyId) {
+            item = data.orcamento.find(o => o.id === legacyId);
+            if (item) return item;
+          }
+          // 3. Match direto por nome
+          return data.orcamento.find(o => o.item === srvName);
+        };
+
+        const orcAtualizado = data.orcamento.map(o => ({...o}));
+        for (const s of sorted) {
+          if (!s.opcoes.length) continue;
+          const escolhido = s.opcoes.find(op => op.escolhido);
+          const valor = escolhido ? escolhido.valor : s.opcoes[0].valor;
+          const existente = findOrcItem(s.servico);
+          if (existente) {
+            const idx = orcAtualizado.findIndex(o => o.id === existente.id);
+            orcAtualizado[idx] = { ...orcAtualizado[idx], item: s.servico, valor, cotacaoSrv: s.servico };
+          } else {
+            orcAtualizado.push({
+              id: "cot-" + Date.now() + "-" + Math.random().toString(36).slice(2,6),
+              item: s.servico,
+              valor,
+              pago: false,
+              cotacaoSrv: s.servico,
+            });
+          }
+        }
+        // Remove itens que vieram de cotações que foram deletadas
+        const nomesAtivos = new Set(sorted.map(s => s.servico));
+        const orcamento = orcAtualizado.filter(o => !o.cotacaoSrv || nomesAtivos.has(o.cotacaoSrv));
+
         await saveCotacoesEOrcamento(sorted, orcamento);
       };
 
@@ -762,11 +791,18 @@
                           {g.conviteEnviado && <div style={{ position:"absolute", top:-3, right:-3, width:12, height:12, borderRadius:"50%", background:C.spiderBlue, border:`2px solid ${C.card}` }} />}
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap" }}>
                             <EditField value={g.nome} onSave={v=>editGuest(g.id,"nome",v)} style={{ fontWeight:700, fontSize:14 }} />
-                            {g.confirmado===true && <span style={{ fontSize:10, color:C.success }}>✅</span>}
+                            {g.confirmado===true && (() => {
+                              const total = (g.adultos||0)+(g.criancas||0);
+                              const real = (g.pessoasConfirmadas||[]).length;
+                              return <span style={{ fontSize:10, color:C.success, fontWeight:700 }}>
+                                ✅{real>0 ? ` ${real}${total?"/"+total:""}` : ""}
+                              </span>;
+                            })()}
                             {g.confirmado===false && <span style={{ fontSize:10, color:C.danger }}>❌</span>}
                             {g.confirmado===null && g.conviteEnviado && <span style={{ fontSize:10, color:C.yellow }}>⏳</span>}
+                            {g.aposPrazo && <span title="Confirmou após o prazo" style={{ fontSize:9, background:"rgba(245,158,11,.18)", color:"#F59E0B", padding:"1px 6px", borderRadius:8, fontWeight:700 }}>⏰ após prazo</span>}
                           </div>
                           <div style={{ display:"flex", gap:5, marginTop:3, alignItems:"center", flexWrap:"wrap" }}>
                             <span style={{ background:gc(g.grupo)+"22", color:gc(g.grupo), borderRadius:20, padding:"2px 9px", fontSize:10, fontWeight:700 }}>{g.grupo}</span>
@@ -776,7 +812,26 @@
                             </span>
                             <span style={{ color:C.spiderBlue, fontSize:10, fontWeight:700 }}>📱 <EditField value={g.telefone||""} placeholder="+ telefone" onSave={v=>editGuest(g.id,"telefone",v)} style={{ color:C.spiderBlue, fontSize:10 }} /></span>
                           {g.criancas>0 && g.idadeCrianca && <span style={{ background:"rgba(251,146,60,.15)", color:"#FB923C", borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>🎂 {g.idadeCrianca}</span>}
-                          {g.nomes && <div style={{ fontSize:10, color:C.muted, marginTop:3, fontStyle:"italic" }}>👥 <EditField value={g.nomes} onSave={v=>editGuest(g.id,"nomes",v)} style={{ color:C.muted, fontSize:10 }} /></div>}
+                          {(() => {
+                            // Parse dos nomes cadastrados (mesma lógica do servidor)
+                            const parse = s => !s ? [] : String(s).split(/,|\s+e\s+/i).map(x=>x.trim()).filter(Boolean);
+                            const nomesArr = parse(g.nomes);
+                            const confirmadas = g.pessoasConfirmadas || [];
+                            // Se confirmou e temos lista real: mostrar quem vai e quem não vai
+                            if (g.confirmado===true && (confirmadas.length || nomesArr.length)) {
+                              const naoVao = nomesArr.filter(n => !confirmadas.includes(n));
+                              return <div style={{ fontSize:10, marginTop:3, display:"flex", flexWrap:"wrap", gap:4 }}>
+                                {confirmadas.map(n => (
+                                  <span key={"y-"+n} style={{ background:"rgba(34,197,94,.15)", color:"#4ADE80", borderRadius:8, padding:"2px 7px", fontWeight:700 }}>✓ {n}</span>
+                                ))}
+                                {naoVao.map(n => (
+                                  <span key={"n-"+n} style={{ background:"rgba(239,68,68,.12)", color:"#F87171", borderRadius:8, padding:"2px 7px", fontWeight:700, textDecoration:"line-through" }}>✕ {n}</span>
+                                ))}
+                              </div>;
+                            }
+                            // Senão: campo editável como antes (mostra placeholder se vazio)
+                            return <div style={{ fontSize:10, color:C.muted, marginTop:3, fontStyle:"italic" }}>👥 <EditField value={g.nomes||""} placeholder="+ nomes (ex: Ana, Bruno e Carla)" onSave={v=>editGuest(g.id,"nomes",v)} style={{ color:C.muted, fontSize:10 }} /></div>;
+                          })()}
                           </div>
                         </div>
                         <div style={{ display:"flex", gap:4, flexShrink:0 }}>
