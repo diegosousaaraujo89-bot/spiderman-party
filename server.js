@@ -13,6 +13,23 @@ const DATA_FESTA         = process.env.DATA_FESTA  || '2027-01-10';
 
 // Cache em memória (evita hit no banco a cada rowToGuest). Atualizado quando alguém salva via PUT.
 let _cacheDataLimite = null;
+let _cacheValorBuffet = null;
+const VALOR_BUFFET_PADRAO = parseFloat(process.env.VALOR_BUFFET || '77.97');
+
+async function getValorBuffet() {
+  if (_cacheValorBuffet !== null) return _cacheValorBuffet;
+  try {
+    const { rows } = await pool.query("SELECT valor FROM dados WHERE chave = 'valorBuffet'");
+    if (rows.length) {
+      const v = JSON.parse(rows[0].valor);
+      const n = typeof v === 'number' ? v : parseFloat(v);
+      if (!isNaN(n) && n >= 0) { _cacheValorBuffet = n; return n; }
+    }
+  } catch {}
+  _cacheValorBuffet = VALOR_BUFFET_PADRAO;
+  return _cacheValorBuffet;
+}
+
 async function getDataLimite() {
   if (_cacheDataLimite) return _cacheDataLimite;
   try {
@@ -61,6 +78,7 @@ async function initDB() {
     `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "nomes" TEXT DEFAULT ''`,
     `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "pessoasConfirmadas" TEXT DEFAULT ''`,
     `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "dataConfirmacao" TIMESTAMPTZ`,
+    `ALTER TABLE convidados ADD COLUMN IF NOT EXISTS "idadesPorNome" TEXT DEFAULT ''`,
   ];
   for (const sql of migrations) {
     await pool.query(sql).catch(()=>{});
@@ -87,6 +105,64 @@ function parsePessoasConfirmadas(raw) {
   if (!raw) return [];
   try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : []; }
   catch { return []; }
+}
+
+// Objeto {nome: idade} parseado do JSON
+function parseIdadesPorNome(raw) {
+  if (!raw) return {};
+  try { const o = JSON.parse(raw); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; }
+  catch { return {}; }
+}
+
+// Classifica crianças por idade a partir do campo idadeCrianca (texto livre) + total de crianças.
+// Regras: 0-4 = isento, 5-9 = meia, 10+ = integral. Sem idade = indefinida (cobrada integral).
+function classificarIdades(idadeCriancaStr, numCriancas) {
+  const idades = String(idadeCriancaStr || '').match(/\d+/g)?.map(Number) || [];
+  let isentas = 0, meias = 0, integraisCrianca = 0;
+  for (const idade of idades.slice(0, numCriancas)) {
+    if (idade <= 4) isentas++;
+    else if (idade <= 9) meias++;
+    else integraisCrianca++;
+  }
+  const indefinidas = Math.max(0, numCriancas - idades.length);
+  return { isentas, meias, integraisCrianca, indefinidas, idades };
+}
+
+// Calcula valor a pagar do grupo. Prioriza idadesPorNome (por pessoa) quando disponível.
+// Fallback: parse de idadeCrianca + contador criancas (modo legado).
+function calcularValor(row, valorIntegral) {
+  const idadesPorNome = (row.idadesPorNome && typeof row.idadesPorNome === 'object' && !Array.isArray(row.idadesPorNome))
+    ? row.idadesPorNome
+    : parseIdadesPorNome(row.idadesPorNome);
+  const temIdadesPorNome = Object.keys(idadesPorNome).length > 0;
+
+  if (temIdadesPorNome) {
+    // Lista: confirmadas se houver, senão todos os nomes cadastrados
+    const confirmadasRaw = Array.isArray(row.pessoasConfirmadas) ? row.pessoasConfirmadas : parsePessoasConfirmadas(row.pessoasConfirmadas);
+    const lista = confirmadasRaw.length ? confirmadasRaw : parseNomes(row.nomes);
+    let qtdIntegral = 0, qtdMeia = 0, qtdIsenta = 0;
+    const detalhes = [];
+    for (const nome of lista) {
+      const raw = idadesPorNome[nome];
+      const idade = (raw === '' || raw === null || raw === undefined) ? null : Number(raw);
+      let categoria;
+      if (idade === null || isNaN(idade)) { qtdIntegral++; categoria = 'integral'; }
+      else if (idade <= 4)                { qtdIsenta++;   categoria = 'isenta';  }
+      else if (idade <= 9)                { qtdMeia++;     categoria = 'meia';    }
+      else                                { qtdIntegral++; categoria = 'integral';}
+      detalhes.push({ pessoa: nome, idade, categoria });
+    }
+    const total = qtdIntegral * valorIntegral + qtdMeia * (valorIntegral / 2);
+    return { qtdIntegral, qtdMeia, qtdIsenta, qtdIndefinida: 0, total, detalhes, usouIdadesPorNome: true };
+  }
+
+  // Modo legado
+  const c = classificarIdades(row.idadeCrianca, row.criancas);
+  const qtdIntegral = row.adultos + c.integraisCrianca + c.indefinidas;
+  const qtdMeia = c.meias;
+  const qtdIsenta = c.isentas;
+  const total = qtdIntegral * valorIntegral + qtdMeia * (valorIntegral / 2);
+  return { qtdIntegral, qtdMeia, qtdIsenta, qtdIndefinida: c.indefinidas, total, detalhes: null, usouIdadesPorNome: false };
 }
 
 // true se a confirmação (se houver) foi feita depois da data limite
@@ -118,6 +194,7 @@ function rowToGuest(row) {
     pessoasConfirmadas: parsePessoasConfirmadas(row.pessoasConfirmadas),
     dataConfirmacao: row.dataConfirmacao || null,
     aposPrazo: foiAposPrazo(row.dataConfirmacao),
+    idadesPorNome: parseIdadesPorNome(row.idadesPorNome),
     token: row.token,
   };
 }
@@ -160,7 +237,7 @@ app.post('/api/convidados', async (req, res) => {
 app.put('/api/convidados/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const allowed = ['nome','grupo','adultos','criancas','telefone','confirmado','conviteEnviado','idadeCrianca','nomes','pessoasConfirmadas'];
+    const allowed = ['nome','grupo','adultos','criancas','telefone','confirmado','conviteEnviado','idadeCrianca','nomes','pessoasConfirmadas','idadesPorNome'];
     const updates = []; const values = []; let i = 1;
     allowed.forEach(f => {
       if (f in req.body) {
@@ -169,6 +246,7 @@ app.put('/api/convidados/:id', async (req, res) => {
         if (f === 'confirmado') val = val === null ? null : val ? 1 : 0;
         if (f === 'conviteEnviado') val = val ? 1 : 0;
         if (f === 'pessoasConfirmadas') val = Array.isArray(val) ? JSON.stringify(val) : (val || '');
+        if (f === 'idadesPorNome') val = (val && typeof val === 'object' && !Array.isArray(val)) ? JSON.stringify(val) : (val || '');
         values.push(val);
       }
     });
@@ -203,15 +281,16 @@ app.put('/api/dados/:chave', async (req, res) => {
       [req.params.chave, JSON.stringify(req.body)]
     );
     // Invalida cache se a chave editada é a data limite
-    if (req.params.chave === 'dataLimite') _cacheDataLimite = null;
+    if (req.params.chave === 'dataLimite')  _cacheDataLimite  = null;
+    if (req.params.chave === 'valorBuffet') _cacheValorBuffet = null;
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── Configuração pública (data da festa e prazo) ─────────────
 app.get('/api/config', async (req, res) => {
-  const dataLimite = await getDataLimite();
-  res.json({ dataLimite, dataFesta: DATA_FESTA });
+  const [dataLimite, valorBuffet] = await Promise.all([getDataLimite(), getValorBuffet()]);
+  res.json({ dataLimite, dataFesta: DATA_FESTA, valorBuffet });
 });
 
 // ── Confirmação pública ──────────────────────────────────────
@@ -626,12 +705,12 @@ app.get('/relatorio', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM convidados ORDER BY grupo, nome');
     const dataLimite = await getDataLimite();
+    const valorBuffet = await getValorBuffet();
+    const fmtR = n => "R$ " + n.toFixed(2).replace('.', ',');
 
-    // Contagem real por linha: pessoasConfirmadas se existir, senão fallback nos contadores originais
     const pessoasReais = (r) => {
       const arr = parsePessoasConfirmadas(r.pessoasConfirmadas);
-      if (arr.length) return arr;
-      return null; // sinaliza fallback pra contadores
+      return arr.length ? arr : null;
     };
     const totalPessoasConfirmadas = (r) => {
       const arr = pessoasReais(r);
@@ -644,44 +723,73 @@ app.get('/relatorio', async (req, res) => {
     const aposPrazo   = rows.filter(r => foiAposPrazo(r.dataConfirmacao));
 
     const totalConfirmadasReal = confirmados.reduce((a,r)=>a+totalPessoasConfirmadas(r),0);
-    const totalAdultos = confirmados.reduce((a,r)=>a+r.adultos,0);
-    const totalCriancas = confirmados.reduce((a,r)=>a+r.criancas,0);
-    const totalAdultosGeral = rows.reduce((a,r)=>a+r.adultos,0);
+    const totalAdultosGeral  = rows.reduce((a,r)=>a+r.adultos,0);
     const totalCriancasGeral = rows.reduce((a,r)=>a+r.criancas,0);
-    const totalGeralTodos = rows.reduce((a,r)=>a+r.adultos+r.criancas,0);
+    const totalGeralTodos    = rows.reduce((a,r)=>a+r.adultos+r.criancas,0);
+
+    let totalIntegral = 0, totalMeia = 0, totalIsenta = 0, totalIndefinida = 0, valorTotal = 0;
+    confirmados.forEach(r => {
+      const v = calcularValor(r, valorBuffet);
+      totalIntegral += v.qtdIntegral;
+      totalMeia += v.qtdMeia;
+      totalIsenta += v.qtdIsenta;
+      totalIndefinida += v.qtdIndefinida;
+      valorTotal += v.total;
+    });
 
     const renderGrupo = (lista, titulo, cor) => {
       if (!lista.length) return '';
       const totalA = lista.reduce((a,r)=>a+r.adultos,0);
       const totalC = lista.reduce((a,r)=>a+r.criancas,0);
+      const totalGrupo = lista.filter(r=>Number(r.confirmado)===1).reduce((a,r)=>a+calcularValor(r,valorBuffet).total,0);
       return `
         <div class="grupo">
-          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos &nbsp;|&nbsp; 👤 ${totalA} adultos &nbsp; 👶 ${totalC} crianças &nbsp; Estimado: ${totalA+totalC}</div>
+          <div class="grupo-title" style="background:${cor}">${titulo} — ${lista.length} grupos &nbsp;|&nbsp; 👤 ${totalA} adultos &nbsp; 👶 ${totalC} crianças &nbsp; Estimado: ${totalA+totalC} &nbsp; · &nbsp; 💰 ${fmtR(totalGrupo)}</div>
           <table>
             <thead><tr>
-              <th style="width:16%">Responsável</th>
-              <th style="width:32%">👥 Confirmados</th>
-              <th style="width:8%;text-align:center">Estimado</th>
-              <th style="width:8%;text-align:center">Real</th>
-              <th style="width:14%">🎂 Idade(s)</th>
-              <th style="width:10%;text-align:center">Status</th>
-              <th style="width:12%;text-align:center">Confirmou em</th>
+              <th style="width:14%">Responsável</th>
+              <th style="width:24%">👥 Confirmados</th>
+              <th style="width:11%">🎂 Idade(s)</th>
+              <th style="width:16%">💵 Composição</th>
+              <th style="width:9%;text-align:right">Valor</th>
+              <th style="width:8%;text-align:center">Status</th>
+              <th style="width:10%;text-align:center">Confirmou em</th>
             </tr></thead>
             <tbody>
               ${lista.map(r => {
                 const conf = Number(r.confirmado);
                 const bg = conf===1?'#f0fff4':r.confirmado===null?'#fffbf0':'#fff5f5';
                 const confirmadasArr = pessoasReais(r);
-                const contagemReal = totalPessoasConfirmadas(r);
                 const foraDoPrazo = foiAposPrazo(r.dataConfirmacao);
+                const v = calcularValor(r, valorBuffet);
+                const idadesObj = parseIdadesPorNome(r.idadesPorNome);
+
+                // "Quem" — se tem idades por nome, mostra idade do lado
                 let quemHtml;
                 if (conf === 1 && confirmadasArr) {
-                  quemHtml = `<ul style="margin:0;padding-left:18px;color:#166534;">${confirmadasArr.map(n=>`<li>${n}</li>`).join('')}</ul>`;
+                  quemHtml = `<ul style="margin:0;padding-left:18px;color:#166534;">${confirmadasArr.map(n => {
+                    const idade = idadesObj[n];
+                    const sufixo = idade != null && idade !== '' ? ` <span style="color:#e67e22;font-size:11px;">(${idade}a)</span>` : '';
+                    return `<li>${n}${sufixo}</li>`;
+                  }).join('')}</ul>`;
                 } else if (conf === 1) {
                   quemHtml = `<span style="color:#666">${r.nomes || 'Todos ('+(r.adultos+r.criancas)+')'}</span>`;
                 } else {
                   quemHtml = `<span style="color:#bbb">${r.nomes||'—'}</span>`;
                 }
+
+                let compHtml;
+                if (conf === 1) {
+                  const parts = [];
+                  if (v.qtdIntegral) parts.push(`<span style="color:#166534;font-weight:700">${v.qtdIntegral}</span> integral`);
+                  if (v.qtdMeia)     parts.push(`<span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-weight:700">${v.qtdMeia} meia</span>`);
+                  if (v.qtdIsenta)   parts.push(`<span style="color:#0369a1">${v.qtdIsenta} isento</span>`);
+                  if (v.qtdIndefinida) parts.push(`<span style="color:#dc2626;font-weight:700">⚠ ${v.qtdIndefinida} sem idade</span>`);
+                  compHtml = parts.join('<br/>') || '<span style="color:#bbb">—</span>';
+                } else {
+                  compHtml = '<span style="color:#bbb">—</span>';
+                }
+
                 const dataFmt = r.dataConfirmacao
                   ? new Date(r.dataConfirmacao).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
                   : '—';
@@ -689,9 +797,9 @@ app.get('/relatorio', async (req, res) => {
                 <tr style="background:${bg}">
                   <td><strong>${r.nome}</strong><br/><small style="color:#999">${r.grupo}</small></td>
                   <td style="word-break:break-word;font-size:13px;">${quemHtml}</td>
-                  <td style="text-align:center;color:#888">${r.adultos+r.criancas}</td>
-                  <td style="text-align:center;font-weight:700;color:${conf===1?'#166534':'#bbb'}">${conf===1?contagemReal:'—'}</td>
-                  <td style="color:#e67e22;word-break:break-word">${r.idadeCrianca||'—'}</td>
+                  <td style="color:#e67e22;word-break:break-word;font-size:13px;">${r.idadeCrianca||'—'}</td>
+                  <td style="font-size:12px;line-height:1.6">${compHtml}</td>
+                  <td style="text-align:right;font-weight:700;color:${conf===1?'#166534':'#bbb'}">${conf===1?fmtR(v.total):'—'}</td>
                   <td style="text-align:center">${conf===1?'✅':r.confirmado===null?'⏳':'❌'}</td>
                   <td style="text-align:center;font-size:12px;color:#666">
                     ${dataFmt}
@@ -745,9 +853,27 @@ app.get('/relatorio', async (req, res) => {
 
   <div class="resumo">
     <div class="card"><div class="num" style="color:#0066CC">${totalGeralTodos}</div><div class="label">Total Estimado</div><div style="font-size:11px;color:#aaa;margin-top:4px">${totalAdultosGeral} adultos · ${totalCriancasGeral} crianças</div></div>
-    <div class="card"><div class="num" style="color:#22c55e">${totalConfirmadasReal}</div><div class="label">✅ Confirmados (real)</div><div style="font-size:11px;color:#aaa;margin-top:4px">${confirmados.length} grupos · pessoas exatas</div></div>
+    <div class="card"><div class="num" style="color:#22c55e">${totalConfirmadasReal}</div><div class="label">✅ Confirmados (real)</div><div style="font-size:11px;color:#aaa;margin-top:4px">${confirmados.length} grupos</div></div>
     <div class="card"><div class="num" style="color:#f59e0b">${pendentes.length}</div><div class="label">⏳ Aguardando</div></div>
     <div class="card"><div class="num" style="color:#ef4444">${recusaram.length}</div><div class="label">❌ Recusaram</div></div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,#166534,#22c55e);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.9;margin-bottom:2px;">💰 Total a pagar (confirmados)</div>
+      <div style="font-size:34px;font-weight:900;line-height:1;">${fmtR(valorTotal)}</div>
+      <div style="font-size:11px;opacity:.75;margin-top:4px;">Valor por pessoa: ${fmtR(valorBuffet)} · Meia (5-9 anos): ${fmtR(valorBuffet/2)} · Isento (0-4 anos): grátis</div>
+    </div>
+    <div style="font-size:13px;line-height:1.6">
+      <div>👤 <strong>${totalIntegral}</strong> integral × ${fmtR(valorBuffet)}</div>
+      <div>👦 <strong>${totalMeia}</strong> meia × ${fmtR(valorBuffet/2)}</div>
+      <div>👶 <strong>${totalIsenta}</strong> isenta (0-4)</div>
+      ${totalIndefinida ? `<div style="color:#fef08a">⚠ <strong>${totalIndefinida}</strong> sem idade — cobrada integral</div>` : ''}
+    </div>
+  </div>
+
+  <div class="no-print" style="background:#eef4ff;border:1px solid #c6d8ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1a4b9e;">
+    📋 Relatórios auxiliares: <a href="/relatorio-meia" style="color:#0066CC;font-weight:700;text-decoration:none;border-bottom:1px dashed #0066CC;">Lista de crianças que pagam meia (5-9 anos)</a>
   </div>
 
   <div style="background:#eef4ff;border:1px solid #c6d8ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1a4b9e;">
@@ -769,6 +895,118 @@ app.get('/relatorio', async (req, res) => {
 </html>`);
   } catch(e) {
     res.status(500).send('Erro ao gerar relatório: '+e.message);
+  }
+});
+
+// ── Relatório separado: crianças que pagam meia (5-9 anos) ──
+app.get('/relatorio-meia', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM convidados WHERE confirmado = 1 ORDER BY grupo, nome');
+    const valorBuffet = await getValorBuffet();
+    const valorMeia = valorBuffet / 2;
+    const fmtR = n => "R$ " + n.toFixed(2).replace('.', ',');
+
+    // Prioriza idadesPorNome; cai no parse de idadeCrianca se não houver.
+    const linhasMeia = [];
+    for (const r of rows) {
+      const idadesObj = parseIdadesPorNome(r.idadesPorNome);
+      const temIdadesPorNome = Object.keys(idadesObj).length > 0;
+      if (temIdadesPorNome) {
+        const confirmadas = parsePessoasConfirmadas(r.pessoasConfirmadas);
+        const lista = confirmadas.length ? confirmadas : parseNomes(r.nomes);
+        for (const nome of lista) {
+          const raw = idadesObj[nome];
+          const idade = (raw === '' || raw === null || raw === undefined) ? null : Number(raw);
+          if (idade != null && !isNaN(idade) && idade >= 5 && idade <= 9) {
+            linhasMeia.push({ responsavel: r.nome, grupo: r.grupo, pessoa: nome, idade });
+          }
+        }
+      } else {
+        // Modo legado: só o número de meias (sem saber qual nome é qual idade)
+        const c = classificarIdades(r.idadeCrianca, r.criancas);
+        for (let i = 0; i < c.meias; i++) {
+          const idadesMeias = c.idades.filter(x => x>=5 && x<=9);
+          linhasMeia.push({ responsavel: r.nome, grupo: r.grupo, pessoa: '(sem nome específico)', idade: idadesMeias[i] });
+        }
+      }
+    }
+    const totalMeias = linhasMeia.length;
+    const totalValor = totalMeias * valorMeia;
+
+    res.send(`<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Meias (5-9 anos) — Festa do Arthur</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#222;padding:20px;}
+  .header{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:16px;padding:24px;margin-bottom:20px;text-align:center;}
+  .header h1{font-size:24px;margin-bottom:4px;}
+  .financeiro{background:#fff;border:2px solid #f59e0b;border-radius:14px;padding:18px 22px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  .financeiro .total{font-size:32px;font-weight:900;color:#92400e;line-height:1;}
+  table{width:100%;background:#fff;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  th{background:#fff8e1;padding:12px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#92400e;border-bottom:1px solid #f0e5c0;}
+  td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px;}
+  tr:last-child td{border-bottom:none;}
+  .footer{text-align:center;font-size:12px;color:#aaa;margin-top:24px;padding-top:16px;border-top:1px solid #eee;}
+  .btn-print{display:inline-block;background:#f59e0b;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;margin-bottom:20px;cursor:pointer;border:none;font-size:15px;}
+  .btn-back{display:inline-block;background:#0066CC;color:#fff;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:700;margin-bottom:20px;margin-left:8px;font-size:14px;}
+  .empty{background:#fff;border-radius:12px;padding:40px;text-align:center;color:#999;}
+  @media print{.no-print{display:none!important;}body{background:#fff;padding:0;}}
+</style></head><body>
+  <div class="no-print" style="text-align:center;margin-bottom:16px;">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <a class="btn-back" href="/relatorio">← Relatório principal</a>
+  </div>
+  <div class="header">
+    <h1>👦 Crianças que pagam meia (5 a 9 anos)</h1>
+    <p style="font-size:13px;opacity:.9">Somente convidados confirmados · gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</p>
+  </div>
+
+  <div class="financeiro">
+    <div>
+      <div style="font-size:11px;color:#92400e;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:2px;">💰 Total meias</div>
+      <div class="total">${fmtR(totalValor)}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:24px;font-weight:900;color:#92400e;">${totalMeias}</div>
+      <div style="font-size:11px;color:#a16207;">criança(s) × ${fmtR(valorMeia)}</div>
+    </div>
+  </div>
+
+  ${totalMeias === 0 ? `
+    <div class="empty">
+      Nenhuma criança confirmada na faixa de 5 a 9 anos por enquanto.<br/>
+      <small style="font-size:12px;color:#bbb;">Preencha a idade de cada criança no modal do convidado (ao lado do nome) para esta lista ficar completa.</small>
+    </div>
+  ` : `
+    <table>
+      <thead><tr>
+        <th style="width:5%;text-align:center">#</th>
+        <th style="width:30%">Criança</th>
+        <th style="width:30%">Responsável (grupo)</th>
+        <th style="width:15%;text-align:center">🎂 Idade</th>
+        <th style="width:20%;text-align:right">Valor</th>
+      </tr></thead>
+      <tbody>
+        ${linhasMeia.map((l,i) => `
+          <tr>
+            <td style="text-align:center;color:#999;font-size:12px">${i+1}</td>
+            <td><strong>${l.pessoa}</strong></td>
+            <td>${l.responsavel}<br/><small style="color:#999">${l.grupo}</small></td>
+            <td style="text-align:center;font-weight:700;color:#e67e22">${l.idade != null ? l.idade+' anos' : '—'}</td>
+            <td style="text-align:right;font-weight:700;color:#92400e">${fmtR(valorMeia)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `}
+
+  <div class="footer">
+    Festa do Arthur · Sonic em Ação · 10/01/2027
+  </div>
+</body></html>`);
+  } catch(e) {
+    res.status(500).send('Erro: '+e.message);
   }
 });
 

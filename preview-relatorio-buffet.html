@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Relatório Buffet — Festa do Arthur</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#222;padding:20px;}
+  .header{background:linear-gradient(135deg,#0066CC,#004499);color:#fff;border-radius:16px;padding:28px 24px;margin-bottom:24px;text-align:center;}
+  .header h1{font-size:28px;letter-spacing:1px;margin-bottom:4px;}
+  .header p{opacity:.8;font-size:14px;}
+  .resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+  .card{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .card .num{font-size:36px;font-weight:700;line-height:1;}
+  .card .label{font-size:12px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+  .grupo{margin-bottom:24px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .grupo-title{color:#fff;padding:12px 20px;font-weight:700;font-size:15px;letter-spacing:.5px;}
+  table{width:100%;border-collapse:collapse;}
+  th{background:#f9f9f9;padding:10px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888;border-bottom:1px solid #eee;}
+  td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#fafafa;}
+  .pendente-warn{background:#fff8e1;border:1px solid #ffc107;border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:13px;color:#7a5c00;}
+  .footer{text-align:center;font-size:12px;color:#aaa;margin-top:24px;padding-top:16px;border-top:1px solid #eee;}
+  .btn-print{display:inline-block;background:#0066CC;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;margin-bottom:20px;cursor:pointer;border:none;font-size:15px;}
+  @media print{.btn-print,.no-print{display:none!important;}body{background:#fff;padding:0;}.grupo,.card{box-shadow:none;}}
+</style>
+</head>
+<body>
+  <div class="no-print" style="text-align:center;margin-bottom:16px;">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+  <div class="header">
+    <h1>🎮 Festa do Arthur — Sonic em Ação</h1>
+    <p>📅 10 de Janeiro de 2027 às 12:30h &nbsp;|&nbsp; 📍 R. José Escodro Sobrinho, 61 - Res. Vale do Sol, Indaiatuba</p>
+    <p style="margin-top:6px;font-size:13px;opacity:.7">Relatório gerado em 30/10/2026 às 20:29</p>
+  </div>
+
+  <div class="resumo">
+    <div class="card"><div class="num" style="color:#0066CC">25</div><div class="label">Total Estimado</div><div style="font-size:11px;color:#aaa;margin-top:4px">16 adultos · 9 crianças</div></div>
+    <div class="card"><div class="num" style="color:#22c55e">20</div><div class="label">✅ Confirmados (real)</div><div style="font-size:11px;color:#aaa;margin-top:4px">4 grupos</div></div>
+    <div class="card"><div class="num" style="color:#f59e0b">1</div><div class="label">⏳ Aguardando</div></div>
+    <div class="card"><div class="num" style="color:#ef4444">1</div><div class="label">❌ Recusaram</div></div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,#166534,#22c55e);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.9;margin-bottom:2px;">💰 Total a pagar (confirmados)</div>
+      <div style="font-size:34px;font-weight:900;line-height:1;">R$ 1208,53</div>
+      <div style="font-size:11px;opacity:.75;margin-top:4px;">Valor por pessoa: R$ 77,97 · Meia (5-9 anos): R$ 38,98 · Isento (0-4 anos): grátis</div>
+    </div>
+    <div style="font-size:13px;line-height:1.6">
+      <div>👤 <strong>13</strong> integral × R$ 77,97</div>
+      <div>👦 <strong>5</strong> meia × R$ 38,98</div>
+      <div>👶 <strong>2</strong> isenta (0-4)</div>
+      
+    </div>
+  </div>
+
+  <div class="no-print" style="background:#eef4ff;border:1px solid #c6d8ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1a4b9e;">
+    📋 Relatórios auxiliares: <a href="/relatorio-meia" style="color:#0066CC;font-weight:700;text-decoration:none;border-bottom:1px dashed #0066CC;">Lista de crianças que pagam meia (5-9 anos)</a>
+  </div>
+
+  <div style="background:#eef4ff;border:1px solid #c6d8ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#1a4b9e;">
+    📅 <strong>Prazo de confirmação:</strong> 03/01/2027
+    
+  </div>
+
+  <div class="pendente-warn">⚠️ <strong>1 grupos</strong> ainda não confirmaram. Se todos confirmarem, chega em <strong>25 pessoas</strong> (estimativa máxima).</div>
+
+  
+        <div class="grupo">
+          <div class="grupo-title" style="background:#0066CC">👨‍👩‍👧‍👦 Família — 4 grupos &nbsp;|&nbsp; 👤 10 adultos &nbsp; 👶 6 crianças &nbsp; Estimado: 16 &nbsp; · &nbsp; 💰 R$ 584,77</div>
+          <table>
+            <thead><tr>
+              <th style="width:14%">Responsável</th>
+              <th style="width:24%">👥 Confirmados</th>
+              <th style="width:11%">🎂 Idade(s)</th>
+              <th style="width:16%">💵 Composição</th>
+              <th style="width:9%;text-align:right">Valor</th>
+              <th style="width:8%;text-align:center">Status</th>
+              <th style="width:10%;text-align:center">Confirmou em</th>
+            </tr></thead>
+            <tbody>
+              
+                <tr style="background:#f0fff4">
+                  <td><strong>Diego e Familia</strong><br/><small style="color:#999">Família</small></td>
+                  <td style="word-break:break-word;font-size:13px;"><ul style="margin:0;padding-left:18px;color:#166534;"><li>Yasmin <span style="color:#e67e22;font-size:11px;">(32a)</span></li><li>Arthur (6 anos) <span style="color:#e67e22;font-size:11px;">(6a)</span></li><li>Dayanne <span style="color:#e67e22;font-size:11px;">(30a)</span></li><li>Diego <span style="color:#e67e22;font-size:11px;">(34a)</span></li></ul></td>
+                  <td style="color:#e67e22;word-break:break-word;font-size:13px;">6</td>
+                  <td style="font-size:12px;line-height:1.6"><span style="color:#166534;font-weight:700">3</span> integral<br/><span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-weight:700">1 meia</span></td>
+                  <td style="text-align:right;font-weight:700;color:#166534">R$ 272,89</td>
+                  <td style="text-align:center">✅</td>
+                  <td style="text-align:center;font-size:12px;color:#666">
+                    30/10
+                    
+                  </td>
+                </tr>
+                <tr style="background:#f0fff4">
+                  <td><strong>Tio Carlos + Ana</strong><br/><small style="color:#999">Família</small></td>
+                  <td style="word-break:break-word;font-size:13px;"><ul style="margin:0;padding-left:18px;color:#166534;"><li>Carlos</li><li>Ana</li><li>Miguel</li><li>Pedro</li></ul></td>
+                  <td style="color:#e67e22;word-break:break-word;font-size:13px;">6 e 3 anos</td>
+                  <td style="font-size:12px;line-height:1.6"><span style="color:#166534;font-weight:700">2</span> integral<br/><span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-weight:700">1 meia</span><br/><span style="color:#0369a1">1 isento</span></td>
+                  <td style="text-align:right;font-weight:700;color:#166534">R$ 194,93</td>
+                  <td style="text-align:center">✅</td>
+                  <td style="text-align:center;font-size:12px;color:#666">
+                    30/10
+                    
+                  </td>
+                </tr>
+                <tr style="background:#f0fff4">
+                  <td><strong>Vó Lídia</strong><br/><small style="color:#999">Família</small></td>
+                  <td style="word-break:break-word;font-size:13px;"><ul style="margin:0;padding-left:18px;color:#166534;"><li>Lídia <span style="color:#e67e22;font-size:11px;">(60a)</span></li><li>João (8) <span style="color:#e67e22;font-size:11px;">(8a)</span></li><li>Maria (3) <span style="color:#e67e22;font-size:11px;">(3a)</span></li></ul></td>
+                  <td style="color:#e67e22;word-break:break-word;font-size:13px;">—</td>
+                  <td style="font-size:12px;line-height:1.6"><span style="color:#166534;font-weight:700">1</span> integral<br/><span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-weight:700">1 meia</span><br/><span style="color:#0369a1">1 isento</span></td>
+                  <td style="text-align:right;font-weight:700;color:#166534">R$ 116,95</td>
+                  <td style="text-align:center">✅</td>
+                  <td style="text-align:center;font-size:12px;color:#666">
+                    30/10
+                    
+                  </td>
+                </tr>
+                <tr style="background:#fffbf0">
+                  <td><strong>Denício</strong><br/><small style="color:#999">Família</small></td>
+                  <td style="word-break:break-word;font-size:13px;"><span style="color:#bbb">—</span></td>
+                  <td style="color:#e67e22;word-break:break-word;font-size:13px;">4 anos</td>
+                  <td style="font-size:12px;line-height:1.6"><span style="color:#bbb">—</span></td>
+                  <td style="text-align:right;font-weight:700;color:#bbb">—</td>
+                  <td style="text-align:center">⏳</td>
+                  <td style="text-align:center;font-size:12px;color:#666">
+                    —
+                    
+                  </td>
+                </tr>
+            </tbody>
+          </table>
+        </div>
+  
+        <div class="grupo">
+          <div class="grupo-title" style="background:#7C3AED">🤝 Amigos — 1 grupos &nbsp;|&nbsp; 👤 6 adultos &nbsp; 👶 3 crianças &nbsp; Estimado: 9 &nbsp; · &nbsp; 💰 R$ 623,76</div>
+          <table>
+            <thead><tr>
+              <th style="width:14%">Responsável</th>
+              <th style="width:24%">👥 Confirmados</th>
+              <th style="width:11%">🎂 Idade(s)</th>
+              <th style="width:16%">💵 Composição</th>
+              <th style="width:9%;text-align:right">Valor</th>
+              <th style="width:8%;text-align:center">Status</th>
+              <th style="width:10%;text-align:center">Confirmou em</th>
+            </tr></thead>
+            <tbody>
+              
+                <tr style="background:#f0fff4">
+                  <td><strong>Serviço</strong><br/><small style="color:#999">Amigos</small></td>
+                  <td style="word-break:break-word;font-size:13px;"><span style="color:#666">Todos (9)</span></td>
+                  <td style="color:#e67e22;word-break:break-word;font-size:13px;">7, 8 e 12</td>
+                  <td style="font-size:12px;line-height:1.6"><span style="color:#166534;font-weight:700">7</span> integral<br/><span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-weight:700">2 meia</span></td>
+                  <td style="text-align:right;font-weight:700;color:#166534">R$ 623,76</td>
+                  <td style="text-align:center">✅</td>
+                  <td style="text-align:center;font-size:12px;color:#666">
+                    30/10
+                    
+                  </td>
+                </tr>
+            </tbody>
+          </table>
+        </div>
+  
+  
+
+  <div class="footer">
+    Festa do Arthur · Sonic em Ação · 10/01/2027 · festaarthur.vercel.app
+  </div>
+</body>
+</html>

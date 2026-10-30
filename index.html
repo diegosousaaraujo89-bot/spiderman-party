@@ -254,10 +254,14 @@
     function GuestModal({ guest, C, API, gc, saveGuestFields, marcarEnviado, apiPut, persist, data, onClose, showToast }) {
       const [nomes, setNomes] = useState(guest.nomes || "");
       const [idadeCrianca, setIdadeCrianca] = useState(guest.idadeCrianca || "");
-      // Nomes parseados atuais (recalcula quando o campo muda)
+      // Idades por nome (objeto {nome: "6"}) — texto pra permitir vazio no input
+      const [idadesPorNome, setIdadesPorNome] = useState(() => {
+        const init = {};
+        const base = (guest.idadesPorNome && typeof guest.idadesPorNome === 'object') ? guest.idadesPorNome : {};
+        Object.keys(base).forEach(k => { init[k] = base[k] === null || base[k] === undefined ? "" : String(base[k]); });
+        return init;
+      });
       const nomesArr = parseNomes(nomes);
-      // Set de quem está marcado. Regra: se o convidado ainda não respondeu, todos marcados;
-      // caso já tenha respondido, usa a resposta anterior.
       const [pessoasSel, setPessoasSel] = useState(() => {
         if (guest.confirmado === null) return new Set(parseNomes(guest.nomes || ""));
         return new Set(guest.pessoasConfirmadas || []);
@@ -271,15 +275,39 @@
       const marcarTodos = () => setPessoasSel(new Set(nomesArr));
       const desmarcarTodos = () => setPessoasSel(new Set());
 
+      const setIdadeDe = (nome, v) => setIdadesPorNome(prev => ({ ...prev, [nome]: v }));
+
+      // Converte idadesPorNome (strings do input) em objeto limpo pra salvar.
+      // Mantém só nomes que ainda existem na lista parseada. Strings vazias viram "".
+      const idadesPorNomeLimpo = () => {
+        const out = {};
+        nomesArr.forEach(n => {
+          const v = idadesPorNome[n];
+          if (v !== undefined && v !== null && v !== "") out[n] = Number(v);
+          else out[n] = "";
+        });
+        return out;
+      };
+
+      // Classifica cada nome visualmente (preview em tempo real)
+      const classificar = (nome) => {
+        const raw = idadesPorNome[nome];
+        if (raw === undefined || raw === null || raw === "") return null;
+        const n = Number(raw);
+        if (isNaN(n)) return null;
+        if (n <= 4) return { label:"Isento", bg:"rgba(14,165,233,.18)", color:"#38BDF8" };
+        if (n <= 9) return { label:"Meia",   bg:"rgba(245,158,11,.18)", color:"#F59E0B" };
+        return { label:"Integral", bg:"rgba(34,197,94,.18)", color:"#22C55E" };
+      };
+
       const salvarBase = async () => {
-        await saveGuestFields(guest.id, { nomes, idadeCrianca });
+        await saveGuestFields(guest.id, { nomes, idadeCrianca, idadesPorNome: idadesPorNomeLimpo() });
         showToast("Salvo! ✅");
       };
 
       const confirmar = async () => {
-        // Se tem nomes cadastrados, usa a seleção atual; senão marca todos os do grupo (fallback)
         const pessoas = nomesArr.length ? nomesArr.filter(n=>pessoasSel.has(n)) : [];
-        const fields = { confirmado:true, conviteEnviado:true, pessoasConfirmadas:pessoas, nomes, idadeCrianca };
+        const fields = { confirmado:true, conviteEnviado:true, pessoasConfirmadas:pessoas, nomes, idadeCrianca, idadesPorNome: idadesPorNomeLimpo() };
         persist({...data, convidados:data.convidados.map(g=>g.id===guest.id?{...g,...fields}:g)});
         await apiPut("/api/convidados/"+guest.id, fields);
         showToast(pessoas.length ? `Confirmado: ${pessoas.length} pessoa(s) ✅` : "Presenca confirmada! ✅");
@@ -287,7 +315,7 @@
       };
 
       const recusar = async () => {
-        const fields = { confirmado:false, pessoasConfirmadas:[], nomes, idadeCrianca };
+        const fields = { confirmado:false, pessoasConfirmadas:[], nomes, idadeCrianca, idadesPorNome: idadesPorNomeLimpo() };
         persist({...data, convidados:data.convidados.map(g=>g.id===guest.id?{...g,...fields}:g)});
         await apiPut("/api/convidados/"+guest.id, fields);
         showToast("Marcado como nao vai. ❌");
@@ -331,15 +359,32 @@
                   </div>
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                  {nomesArr.map(n => (
-                    <label key={n} style={{ display:"flex", alignItems:"center", gap:10, background:pessoasSel.has(n)?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)", border:`1px solid ${pessoasSel.has(n)?"rgba(34,197,94,.35)":C.border}`, borderRadius:8, padding:"8px 10px", cursor:"pointer", userSelect:"none", transition:"all .15s" }}>
-                      <input type="checkbox" checked={pessoasSel.has(n)} onChange={()=>togglePessoa(n)} style={{ width:16, height:16, accentColor:"#22C55E", cursor:"pointer" }} />
-                      <span style={{ fontSize:13, fontWeight:700, color:pessoasSel.has(n)?"#F2F2F2":C.muted, textDecoration:pessoasSel.has(n)?"none":"line-through" }}>{n}</span>
-                    </label>
-                  ))}
+                  {nomesArr.map(n => {
+                    const marcado = pessoasSel.has(n);
+                    const cat = classificar(n);
+                    return (
+                      <div key={n} style={{ display:"flex", alignItems:"center", gap:8, background:marcado?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)", border:`1px solid ${marcado?"rgba(34,197,94,.35)":C.border}`, borderRadius:8, padding:"8px 10px", userSelect:"none", transition:"all .15s" }}>
+                        <label style={{ display:"flex", alignItems:"center", gap:10, flex:1, cursor:"pointer", minWidth:0 }}>
+                          <input type="checkbox" checked={marcado} onChange={()=>togglePessoa(n)} style={{ width:16, height:16, accentColor:"#22C55E", cursor:"pointer", flexShrink:0 }} />
+                          <span style={{ fontSize:13, fontWeight:700, color:marcado?"#F2F2F2":C.muted, textDecoration:marcado?"none":"line-through", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n}</span>
+                        </label>
+                        {cat && (
+                          <span style={{ background:cat.bg, color:cat.color, borderRadius:6, padding:"2px 6px", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:.5, flexShrink:0 }}>{cat.label}</span>
+                        )}
+                        <input
+                          type="number" min="0" max="120" step="1"
+                          value={idadesPorNome[n] ?? ""}
+                          onChange={e => setIdadeDe(n, e.target.value)}
+                          placeholder="idade"
+                          title="Idade (anos) — deixe vazio pra adulto sem idade específica"
+                          style={{ width:50, background:C.card2, border:`1px solid ${C.border}`, borderRadius:6, padding:"5px 6px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:12, outline:"none", textAlign:"center", flexShrink:0 }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{ fontSize:10, color:C.muted, marginTop:8, fontStyle:"italic" }}>
-                  Desmarque quem não vai. A seleção é usada quando você clica em "Confirmou presença".
+                <div style={{ fontSize:10, color:C.muted, marginTop:8, fontStyle:"italic", lineHeight:1.5 }}>
+                  Desmarque quem não vai. A idade preenchida ao lado é usada no relatório do buffet (0-4 isento · 5-9 meia · 10+ integral · vazio = adulto).
                 </div>
               </div>
             )}
@@ -401,7 +446,7 @@
       const [newCheck, setNewCheck] = useState({ item:"", categoria:"Buffet" });
 
       /* -- Carrega tudo do servidor ao iniciar e a cada 30s -- */
-      const [config, setConfig] = useState({ dataLimite:"", dataFesta:"" });
+      const [config, setConfig] = useState({ dataLimite:"", dataFesta:"", valorBuffet:77.97 });
       const loadFromServer = useCallback(async () => {
         const [convidados, checklist, orcamento, cotacoes, cfg] = await Promise.all([
           apiGet("/api/convidados"),
@@ -788,6 +833,31 @@
                   </div>
                 </div>
 
+                <div className="hw-card" style={{ ...cardSt, marginBottom:12, background:`linear-gradient(135deg, rgba(34,197,94,.08), rgba(34,197,94,.02))`, border:`1px solid ${C.success}44` }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:13, letterSpacing:2, color:C.success }}>💰 VALOR POR PESSOA (BUFFET)</div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ color:C.muted, fontSize:14, fontWeight:700 }}>R$</div>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={config.valorBuffet ?? ""}
+                      onChange={e => setConfig(c => ({...c, valorBuffet:e.target.value}))}
+                      onBlur={async e => {
+                        const n = parseFloat(e.target.value);
+                        if (isNaN(n) || n < 0) return;
+                        await apiPut("/api/dados/valorBuffet", n);
+                        setConfig(c => ({...c, valorBuffet:n}));
+                        showToast("Valor por pessoa atualizado ✅");
+                      }}
+                      style={{ flex:1, background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", color:C.text, fontFamily:"'Nunito',sans-serif", fontSize:14, outline:"none" }}
+                    />
+                  </div>
+                  <div style={{ fontSize:11, color:C.muted, marginTop:8, lineHeight:1.5 }}>
+                    Meia (5-9 anos): <strong style={{ color:C.success }}>R$ {(Number(config.valorBuffet||0)/2).toFixed(2).replace(".",",")}</strong> · Isento (0-4 anos): <strong>grátis</strong>. Usado no relatório do buffet e na lista de meias.
+                  </div>
+                </div>
+
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
                   <StatCard icon="✅" value={conf.length} label="Confirmados" color={C.success} />
                   <StatCard icon="⏳" value={pend.length} label="Aguardando" color={C.yellow} />
@@ -858,8 +928,13 @@
                     { label:"Gastos", icon:"💰", t:"budget", color:C.yellow },
                     { label:"+ Convidado", icon:"➕", t:"guests", color:C.red, extra:()=>setTimeout(()=>setAddGuest(true),300) },
                     { label:"Relatório Buffet", icon:"📄", t:"relatorio", color:C.success },
+                    { label:"Meias (5-9 anos)", icon:"👦", t:"relatorio-meia", color:"#F59E0B" },
                   ].map((a,i)=>(
-                    <button key={i} className="hw-btn hw-card" onClick={()=>{ if(a.t==="relatorio"){ window.open(API+"/relatorio","_blank"); } else { setTab(a.t); a.extra&&a.extra(); } }}
+                    <button key={i} className="hw-btn hw-card" onClick={()=>{
+                      if(a.t==="relatorio"){ window.open(API+"/relatorio","_blank"); }
+                      else if(a.t==="relatorio-meia"){ window.open(API+"/relatorio-meia","_blank"); }
+                      else { setTab(a.t); a.extra&&a.extra(); }
+                    }}
                       style={{ ...cardSt, background:a.color+"18", border:`1px solid ${a.color}33`, cursor:"pointer", borderRadius:14, display:"flex", flexDirection:"column", alignItems:"flex-start", gap:6, padding:14, marginBottom:0 }}>
                       <span style={{ fontSize:24 }}>{a.icon}</span>
                       <span style={{ color:a.color, fontWeight:700, fontSize:12 }}>{a.label}</span>
