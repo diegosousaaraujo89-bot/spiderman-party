@@ -413,7 +413,7 @@ form{margin:0;}
   <div class="t4">📅 10 de Janeiro de 2027 às 12:30h</div>
   <button class="btn-ver" onclick="showConfirm()">Ver meu convite ➜</button>
   <div style="margin-top:16px;">
-    <button id="music-btn" onclick="toggleMusic()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:50px;padding:8px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🎵 Tocar música</button>
+    <button id="music-btn" onclick="toggleMusic()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:50px;padding:8px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🔇 Pausar música</button>
   </div>
 </div>
 
@@ -561,7 +561,11 @@ function startMusic() {
     musicOn = true;
     const btn = document.getElementById('music-btn');
     if (btn) btn.textContent = '🔇 Pausar música';
-  }).catch(() => {});
+  }).catch(() => {
+    // Autoplay bloqueado: deixa pronto pra tocar no próximo clique
+    const btn = document.getElementById('music-btn');
+    if (btn) btn.textContent = '🎵 Tocar música';
+  });
 }
 
 function toggleMusic() {
@@ -575,9 +579,17 @@ function toggleMusic() {
   }
 }
 
+// Tenta autoplay no load (funciona quando PWA instalado ou usuário já interagiu com o domínio)
+window.addEventListener('load', () => { startMusic(); });
+
+// Fallback: qualquer toque na tela também dispara
 document.addEventListener('click', function onFirst() {
-  startMusic();
+  if (!musicOn) startMusic();
   document.removeEventListener('click', onFirst);
+}, { once: true });
+document.addEventListener('touchstart', function onFirstTouch() {
+  if (!musicOn) startMusic();
+  document.removeEventListener('touchstart', onFirstTouch);
 }, { once: true });
 
 const pc = document.getElementById('particles');
@@ -589,6 +601,8 @@ for(let i=0;i<20;i++){
   pc.appendChild(p);
 }
 function showConfirm(){
+  // Clique explícito do convidado — brecha garantida pra iniciar a música
+  if (!musicOn) startMusic();
   document.getElementById('intro').classList.add('hide');
   setTimeout(()=>{
     document.getElementById('intro').style.display='none';
